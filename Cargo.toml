@@ -6,3 +6,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.95"
 dotenv = "0.15.0"
+bundler = { git = "https://github.com/weaveVM/bundler", branch = "main" }
+alloy = "0.11.0"
+planetscale-driver = "0.5.1"
+serde = "1.0.217"
+serde_json = "1.0.138"
