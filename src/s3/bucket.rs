@@ -1,11 +1,11 @@
-use crate::utils::wvm_bundler::post_data_to_bundler;
+use crate::utils::planetscale::{get_account_name, ps_create_bucket};
 use crate::utils::wvm::get_transaction;
+use crate::utils::wvm_bundler::post_data_to_bundler;
 use anyhow::Error;
 use bundler::utils::core::tags::Tag;
 use planetscale_driver::Database;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, to_vec};
-use crate::utils::planetscale::{get_account_name, ps_create_bucket};
+use serde_json::{to_vec, Value};
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Database)]
 pub struct Bucket {
     pub id: u64,
@@ -14,7 +14,7 @@ pub struct Bucket {
     pub bucket_name: String,
     pub tx_hash: String,
     pub block_number: u64,
-    pub created_at: String
+    pub created_at: String,
 }
 
 impl Bucket {
@@ -26,7 +26,13 @@ impl Bucket {
         let block = get_transaction(envelope.clone()).await?;
 
         if let Some(block) = block {
-            let _bucket = ps_create_bucket(account_id, &bucket_name, &envelope, block.block_number.unwrap_or_default()).await?;
+            let _bucket = ps_create_bucket(
+                account_id,
+                &bucket_name,
+                &envelope,
+                block.block_number.unwrap_or_default(),
+            )
+            .await?;
         }
 
         Ok(())

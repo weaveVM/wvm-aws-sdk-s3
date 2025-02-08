@@ -1,6 +1,6 @@
+use crate::s3::account::Account;
 use crate::s3::bucket::Bucket;
 use crate::s3::object::Object;
-use crate::s3::account::Account;
 use crate::utils::env_utils::get_env_var;
 use anyhow::Error;
 use planetscale_driver::{query, PSConnection};
@@ -120,15 +120,13 @@ pub async fn delete_object(bucket_id: u64, object_key: &str) -> Result<(), Error
 
 pub async fn get_account_name(account_id: u64) -> Result<String, Error> {
     let conn = ps_client().await?;
-    
+
     let query_str = format!(
         "SELECT account_name FROM accounts WHERE id = {}",
         account_id
     );
 
-    let account: Account = query(&query_str)
-        .fetch_one(&conn)
-        .await?;
+    let account: Account = query(&query_str).fetch_one(&conn).await?;
 
     Ok(account.account_name)
 }
