@@ -2,15 +2,25 @@
 CREATE TABLE accounts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     account_name VARCHAR(255) NOT NULL,
-    access_key_id VARCHAR(128) NOT NULL,
-    secret_access_key_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     is_active BOOLEAN NOT NULL DEFAULT true
 );
 
-CREATE INDEX idx_accounts_access_key ON accounts(access_key_id);
 CREATE INDEX idx_accounts_status ON accounts(is_active);
+
+-- ACCESS KEYS
+CREATE TABLE access_keys (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    owner_id BIGINT UNSIGNED NOT NULL,
+    access_key VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN NOT NULL DEFAULT true
+);
+
+CREATE INDEX idx_access_keys_owner ON access_keys(owner_id);
+CREATE INDEX idx_access_keys_lookup ON access_keys(access_key);
+CREATE INDEX idx_access_keys_status ON access_keys(is_active);
 
 -- BUCKET INDEX
 CREATE TABLE bucket_index (
@@ -36,10 +46,10 @@ CREATE TABLE object_index (
     size_bytes BIGINT UNSIGNED,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_deleted BOOLEAN NOT NULL DEFAULT false
+    is_deleted BOOLEAN NOT NULL DEFAULT false,
+    metadata JSON
 );
 
 CREATE INDEX idx_object_bucket ON object_index(bucket_id);
 CREATE INDEX idx_object_tx_block ON object_index(tx_hash, block_number);
 CREATE INDEX idx_object_status ON object_index(is_deleted);
-
