@@ -2,3 +2,4 @@ pub mod aws_config;
 pub mod bucket;
 pub mod client;
 pub mod object;
+pub mod account;

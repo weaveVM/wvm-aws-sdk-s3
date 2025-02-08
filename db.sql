@@ -30,7 +30,6 @@ CREATE TABLE bucket_index (
     tx_hash VARCHAR(66) NOT NULL,
     block_number BIGINT UNSIGNED,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    mutable_settings JSON
 );
 
 CREATE INDEX idx_bucket_account ON bucket_index(account_id);
