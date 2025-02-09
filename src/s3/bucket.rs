@@ -1,7 +1,8 @@
-use crate::utils::planetscale::{get_account_name, ps_create_bucket};
+use crate::utils::planetscale::{get_account_id, get_account_name, ps_create_bucket};
 use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
-use anyhow::Error;
+use alloy::rpc::types::Transaction;
+use anyhow::{Error, Ok};
 use bundler::utils::core::tags::Tag;
 use planetscale_driver::Database;
 use serde::{Deserialize, Serialize};
@@ -17,24 +18,26 @@ pub struct Bucket {
     pub created_at: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CreateBucketOutput {
+    pub location: String,
+    pub bucket_tx: String,
+}
+
+impl CreateBucketOutput {
+    pub fn from(bucket_tx: String) -> Self {
+        Self {
+            location: "wvm-ledger".to_string(),
+            bucket_tx,
+        }
+    }
+}
+
 impl Bucket {
-    pub async fn create_bucket(account_id: u64, bucket_name: String) -> Result<(), Error> {
-        let account_name = get_account_name(account_id).await?;
+    pub async fn create_bucket(account_name: String, bucket_name: String) -> Result<String, Error> {
         let bucket_data = bucket_name.as_bytes().to_vec();
         let bucket_tags = vec![Tag::new("owner".to_string(), account_name)];
         let envelope = post_data_to_bundler(bucket_data, Some(bucket_tags)).await?;
-        let block = get_transaction(envelope.clone()).await?;
-
-        if let Some(block) = block {
-            let _bucket = ps_create_bucket(
-                account_id,
-                &bucket_name,
-                &envelope,
-                block.block_number.unwrap_or_default(),
-            )
-            .await?;
-        }
-
-        Ok(())
+        Ok(envelope)
     }
 }

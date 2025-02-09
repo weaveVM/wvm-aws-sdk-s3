@@ -1,4 +1,4 @@
-use crate::s3::account::Account;
+use crate::s3::account::{AccountId, AccountName};
 use crate::s3::bucket::Bucket;
 use crate::s3::object::Object;
 use crate::utils::env_utils::get_env_var;
@@ -126,7 +126,20 @@ pub async fn get_account_name(account_id: u64) -> Result<String, Error> {
         account_id
     );
 
-    let account: Account = query(&query_str).fetch_one(&conn).await?;
+    let account: AccountName = query(&query_str).fetch_one(&conn).await?;
 
     Ok(account.account_name)
+}
+
+pub async fn get_account_id(account_name: String) -> Result<u64, Error> {
+    let conn = ps_client().await?;
+
+    let query_str = format!(
+        "SELECT id FROM accounts WHERE account_name = \"{}\"",
+        account_name
+    );
+
+    let account: AccountId = query(&query_str).fetch_one(&conn).await?;
+
+    Ok(account.account_id)
 }
