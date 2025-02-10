@@ -24,6 +24,7 @@ impl Client {
     pub fn list_buckets(&self) -> ListBucketBuilder {
         ListBucketBuilder {
             config: self.config.clone(),
+            max_keys: None,
         }
     }
 }

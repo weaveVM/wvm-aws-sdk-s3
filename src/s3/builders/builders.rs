@@ -9,4 +9,5 @@ pub struct CreateBucketBuilder {
 #[derive(Debug, Clone, Default)]
 pub struct ListBucketBuilder {
     pub config: Config,
+    pub max_keys: Option<i32>,
 }

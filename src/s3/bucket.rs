@@ -1,13 +1,8 @@
-use crate::utils::planetscale::{
-    get_account_id, get_account_name, ps_create_bucket, ps_list_buckets,
-};
-use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
 use anyhow::Error;
 use bundler::utils::core::tags::Tag;
 use planetscale_driver::Database;
 use serde::{Deserialize, Serialize};
-use serde_json::{to_vec, Value};
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Database)]
 pub struct Bucket {
     pub id: String,
@@ -39,10 +34,5 @@ impl Bucket {
         let bucket_tags = vec![Tag::new("owner".to_string(), account_name)];
         let envelope = post_data_to_bundler(bucket_data, Some(bucket_tags)).await?;
         Ok(envelope)
-    }
-
-    pub async fn list_buckets(account_id: u64) -> Result<Vec<Bucket>, Error> {
-        let buckets = ps_list_buckets(account_id).await?;
-        Ok(buckets)
     }
 }

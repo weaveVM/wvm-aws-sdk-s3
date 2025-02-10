@@ -13,7 +13,7 @@ async fn main() -> Result<(), Error> {
 
     let bucket_name = "aloha";
     // let bucket = client.create_bucket().bucket(bucket_name).send().await?;
-    let buckets = client.list_buckets().send().await?;
+    let buckets = client.list_buckets().max_keys(1).send().await?;
     println!("{:?}", buckets);
 
     Ok(())
