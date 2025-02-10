@@ -11,9 +11,10 @@ async fn main() -> Result<(), Error> {
     let aws_config = Config::load_from_env().await?;
     let client = Client::new(&aws_config)?;
 
-    let bucket_name = "hello-world-from-wvm";
-    let bucket = client.create_bucket().bucket(bucket_name).send().await?;
-    println!("{:?}", bucket);
+    let bucket_name = "aloha";
+    // let bucket = client.create_bucket().bucket(bucket_name).send().await?;
+    let buckets = client.list_buckets().send().await?;
+    println!("{:?}", buckets);
 
     Ok(())
 }

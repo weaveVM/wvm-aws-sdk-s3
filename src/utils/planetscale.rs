@@ -15,15 +15,28 @@ async fn ps_client() -> Result<PSConnection, Error> {
     Ok(conn)
 }
 
-pub async fn list_buckets(account_id: u64) -> Result<Vec<Bucket>, Error> {
+// pub async fn ps_list_buckets(account_id: u64) -> Result<Vec<Bucket>, Error> {
+//     let conn = ps_client().await?;
+
+//     let query_str = format!(
+//         "SELECT id, bucket_name, account_id, tx_hash, block_number, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at FROM bucket_index WHERE account_id = {}",
+//         account_id
+//     );
+
+//     let buckets: Vec<Bucket> = query(&query_str).fetch_all(&conn).await?;
+
+//     Ok(buckets)
+// }
+
+pub async fn ps_list_buckets(account_id: u64) -> Result<Vec<Bucket>, Error> {
     let conn = ps_client().await?;
 
     let query_str = format!(
-        "SELECT id, bucket_name, created_at FROM bucket_index WHERE account_id = {}",
+        "SELECT id, account_id, bucket_name, tx_hash, block_number, created_at FROM bucket_index WHERE account_id = {}",
         account_id
     );
 
-    let buckets: Vec<Bucket> = query(&query_str).fetch_all(&conn).await?;
+    let buckets = query(&query_str).fetch_all(&conn).await?;
 
     Ok(buckets)
 }
