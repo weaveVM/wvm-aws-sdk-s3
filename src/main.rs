@@ -49,8 +49,11 @@ async fn main() -> Result<(), Error> {
     // println!("{:?}", object);
 
     // list objects
-    let objects = client.list_objects_v2().bucket(bucket_name).send().await?;
-    println!("{:?}", objects);
+    // let objects = client.list_objects_v2().bucket(bucket_name).send().await?;
+    // println!("{:?}", objects);
+
+    // delete object
+    // let deleted_object = client.delete_object().bucket(bucket_name).key(key_name).send().await?;
 
     Ok(())
 }

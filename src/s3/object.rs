@@ -27,3 +27,15 @@ impl PutObjectOutput {
         Self { tx_hash, tags }
     }
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct DeleteObjectOutput {
+    pub deleted: bool,
+    pub key: String,
+}
+
+impl DeleteObjectOutput {
+    pub fn from(deleted: bool, key: String) -> Self {
+        Self { deleted, key }
+    }
+}

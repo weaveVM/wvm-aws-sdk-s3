@@ -1,7 +1,7 @@
 use crate::s3::aws_config::Config;
 use crate::s3::builders::builders::{
-    CreateBucketBuilder, DeleteBucketBuilder, GetObjectBuilder, ListBucketBuilder,
-    ListObjectsBuilder, PutObjectBuilder,
+    CreateBucketBuilder, DeleteBucketBuilder, DeleteObjectBuilder, GetObjectBuilder,
+    ListBucketBuilder, ListObjectsBuilder, PutObjectBuilder,
 };
 use anyhow::Error;
 
@@ -54,6 +54,13 @@ impl Client {
 
     pub fn list_objects_v2(&self) -> ListObjectsBuilder {
         ListObjectsBuilder {
+            config: self.config.clone(),
+            ..Default::default()
+        }
+    }
+
+    pub fn delete_object(&self) -> DeleteObjectBuilder {
+        DeleteObjectBuilder {
             config: self.config.clone(),
             ..Default::default()
         }
