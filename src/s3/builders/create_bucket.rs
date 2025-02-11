@@ -5,6 +5,7 @@ use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
 use anyhow::Error;
 use bundler::utils::core::tags::Tag;
+use tokio::time::{sleep, Duration};
 
 impl CreateBucketBuilder {
     pub fn bucket(mut self, bucket_name: &str) -> Self {
@@ -18,6 +19,8 @@ impl CreateBucketBuilder {
         config.account_id = Some(ps_get_account_id(account_name.clone()).await?);
 
         let bucket_tx = create_bucket(account_name, self.bucket_name.clone()).await?;
+        // sleep 1s for tx inclusion on WeaveVM block
+        sleep(Duration::from_secs(1)).await;
 
         let block = get_transaction(bucket_tx.clone()).await?;
 

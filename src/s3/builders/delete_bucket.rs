@@ -13,7 +13,7 @@ impl DeleteBucketBuilder {
         self.config.account_id = Some(ps_get_account_id(self.config.account_name.clone()).await?);
         let account_id = self.config.account_id.unwrap();
         let _deleted_bucket = ps_delete_bucket(account_id, &self.bucket_name).await?;
-        let res = DeleteBucketOutput::from(self.bucket_name, self.config.account_name);
-        Ok(res)
+        let output = DeleteBucketOutput::from(self.bucket_name, self.config.account_name);
+        Ok(output)
     }
 }

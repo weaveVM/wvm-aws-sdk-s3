@@ -12,11 +12,18 @@ async fn main() -> Result<(), Error> {
     let client = Client::new(&aws_config)?;
 
     let bucket_name = "aloha";
-    // let bucket = client.create_bucket().bucket(bucket_name).send().await?;
+    
+    // create bucket
+    let bucket = client.create_bucket().bucket(bucket_name).send().await?;
+    println!("{:?}", bucket);
+    
+    // list buckets
     // let buckets = client.list_buckets().max_keys(1).send().await?;
     // println!("{:?}", buckets);
-    let deleted_bucket = client.delete_bucket().bucket(bucket_name).send().await?;
-    println!("{:?}", deleted_bucket);
+
+    // delete bucket
+    // let deleted_bucket = client.delete_bucket().bucket(bucket_name).send().await?;
+    // println!("{:?}", deleted_bucket);
 
     Ok(())
 }
