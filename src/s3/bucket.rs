@@ -1,6 +1,3 @@
-use crate::utils::wvm_bundler::post_data_to_bundler;
-use anyhow::Error;
-use bundler::utils::core::tags::Tag;
 use planetscale_driver::Database;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Database)]
@@ -28,11 +25,17 @@ impl CreateBucketOutput {
     }
 }
 
-impl Bucket {
-    pub async fn create_bucket(account_name: String, bucket_name: String) -> Result<String, Error> {
-        let bucket_data = bucket_name.as_bytes().to_vec();
-        let bucket_tags = vec![Tag::new("owner".to_string(), account_name)];
-        let envelope = post_data_to_bundler(bucket_data, Some(bucket_tags)).await?;
-        Ok(envelope)
+#[derive(Debug, Clone, Default)]
+pub struct DeleteBucketOutput {
+    pub bucket_name: String,
+    pub account_name: String,
+}
+
+impl DeleteBucketOutput {
+    pub fn from(bucket_name: String, account_name: String) -> Self {
+        Self {
+            bucket_name,
+            account_name,
+        }
     }
 }

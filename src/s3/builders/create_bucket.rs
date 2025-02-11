@@ -1,8 +1,10 @@
 use crate::s3::bucket::{Bucket, CreateBucketOutput};
 use crate::s3::builders::builders::CreateBucketBuilder;
-use crate::utils::planetscale::{get_account_id, get_account_name, ps_create_bucket};
+use crate::utils::planetscale::{ps_create_bucket, ps_get_account_id, ps_get_account_name};
 use crate::utils::wvm::get_transaction;
+use crate::utils::wvm_bundler::post_data_to_bundler;
 use anyhow::Error;
+use bundler::utils::core::tags::Tag;
 
 impl CreateBucketBuilder {
     pub fn bucket(mut self, bucket_name: &str) -> Self {
@@ -13,9 +15,9 @@ impl CreateBucketBuilder {
     pub async fn send(self) -> Result<CreateBucketOutput, Error> {
         let account_name = self.config.account_name.clone();
         let mut config = self.config;
-        config.account_id = Some(get_account_id(account_name.clone()).await?);
+        config.account_id = Some(ps_get_account_id(account_name.clone()).await?);
 
-        let bucket_tx = Bucket::create_bucket(account_name, self.bucket_name.clone()).await?;
+        let bucket_tx = create_bucket(account_name, self.bucket_name.clone()).await?;
 
         let block = get_transaction(bucket_tx.clone()).await?;
 
@@ -32,4 +34,11 @@ impl CreateBucketBuilder {
         let output = CreateBucketOutput::from(bucket_tx);
         Ok(output)
     }
+}
+
+async fn create_bucket(account_name: String, bucket_name: String) -> Result<String, Error> {
+    let bucket_data = bucket_name.as_bytes().to_vec();
+    let bucket_tags = vec![Tag::new("owner".to_string(), account_name)];
+    let envelope = post_data_to_bundler(bucket_data, Some(bucket_tags)).await?;
+    Ok(envelope)
 }

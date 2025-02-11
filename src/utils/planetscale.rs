@@ -50,7 +50,7 @@ pub async fn ps_create_bucket(
     Ok(())
 }
 
-pub async fn delete_bucket(account_id: u64, bucket_name: &str) -> Result<(), Error> {
+pub async fn ps_delete_bucket(account_id: u64, bucket_name: &str) -> Result<(), Error> {
     let conn = ps_client().await?;
 
     let query_str = format!(
@@ -63,7 +63,7 @@ pub async fn delete_bucket(account_id: u64, bucket_name: &str) -> Result<(), Err
     Ok(())
 }
 
-pub async fn list_objects(bucket_id: u64) -> Result<Vec<Object>, Error> {
+pub async fn ps_list_objects(bucket_id: u64) -> Result<Vec<Object>, Error> {
     let conn = ps_client().await?;
 
     let query_str = format!(
@@ -76,7 +76,7 @@ pub async fn list_objects(bucket_id: u64) -> Result<Vec<Object>, Error> {
     Ok(objects)
 }
 
-pub async fn put_object(
+pub async fn ps_put_object(
     bucket_id: u64,
     object_key: &str,
     tx_hash: &str,
@@ -96,7 +96,7 @@ pub async fn put_object(
     Ok(())
 }
 
-pub async fn get_object(bucket_id: u64, object_key: &str) -> Result<Object, Error> {
+pub async fn ps_get_object(bucket_id: u64, object_key: &str) -> Result<Object, Error> {
     let conn = ps_client().await?;
 
     let query_str = format!(
@@ -109,7 +109,7 @@ pub async fn get_object(bucket_id: u64, object_key: &str) -> Result<Object, Erro
     Ok(object)
 }
 
-pub async fn delete_object(bucket_id: u64, object_key: &str) -> Result<(), Error> {
+pub async fn ps_delete_object(bucket_id: u64, object_key: &str) -> Result<(), Error> {
     let conn = ps_client().await?;
 
     let query_str = format!(
@@ -122,7 +122,7 @@ pub async fn delete_object(bucket_id: u64, object_key: &str) -> Result<(), Error
     Ok(())
 }
 
-pub async fn get_account_name(account_id: u64) -> Result<String, Error> {
+pub async fn ps_get_account_name(account_id: u64) -> Result<String, Error> {
     let conn = ps_client().await?;
 
     let query_str = format!(
@@ -135,7 +135,7 @@ pub async fn get_account_name(account_id: u64) -> Result<String, Error> {
     Ok(account.account_name)
 }
 
-pub async fn get_account_id(account_name: String) -> Result<u64, Error> {
+pub async fn ps_get_account_id(account_name: String) -> Result<u64, Error> {
     let conn = ps_client().await?;
 
     let query_str = format!(
