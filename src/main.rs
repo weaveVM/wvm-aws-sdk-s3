@@ -12,11 +12,11 @@ async fn main() -> Result<(), Error> {
     let client = Client::new(&aws_config)?;
 
     let bucket_name = "aloha";
-    
+
     // create bucket
-    let bucket = client.create_bucket().bucket(bucket_name).send().await?;
-    println!("{:?}", bucket);
-    
+    // let bucket = client.create_bucket().bucket(bucket_name).send().await?;
+    // println!("{:?}", bucket);
+
     // list buckets
     // let buckets = client.list_buckets().max_keys(1).send().await?;
     // println!("{:?}", buckets);
@@ -24,6 +24,19 @@ async fn main() -> Result<(), Error> {
     // delete bucket
     // let deleted_bucket = client.delete_bucket().bucket(bucket_name).send().await?;
     // println!("{:?}", deleted_bucket);
+
+    // put object
+    let data = b"hello world".to_vec();
+    let object = client
+        .put_object()
+        .bucket("aloha")
+        .body(data)
+        .key("./hello-world.txt")
+        .content_type("plain/text")
+        .metadata("test", "hooray")
+        .send()
+        .await?;
+    println!("{:?}", object);
 
     Ok(())
 }

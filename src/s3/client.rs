@@ -1,8 +1,8 @@
 use crate::s3::aws_config::Config;
-use crate::s3::builders::builders::{CreateBucketBuilder, ListBucketBuilder};
+use crate::s3::builders::builders::{
+    CreateBucketBuilder, DeleteBucketBuilder, ListBucketBuilder, PutObjectBuilder,
+};
 use anyhow::Error;
-
-use super::builders::builders::DeleteBucketBuilder;
 
 #[derive(Debug, Clone, Default)]
 pub struct Client {
@@ -19,21 +19,28 @@ impl Client {
     pub fn create_bucket(&self) -> CreateBucketBuilder {
         CreateBucketBuilder {
             config: self.config.clone(),
-            bucket_name: String::new(),
+            ..Default::default()
         }
     }
 
     pub fn list_buckets(&self) -> ListBucketBuilder {
         ListBucketBuilder {
             config: self.config.clone(),
-            max_keys: None,
+            ..Default::default()
         }
     }
 
     pub fn delete_bucket(&self) -> DeleteBucketBuilder {
         DeleteBucketBuilder {
             config: self.config.clone(),
-            bucket_name: String::new(),
+            ..Default::default()
+        }
+    }
+
+    pub fn put_object(&self) -> PutObjectBuilder {
+        PutObjectBuilder {
+            config: self.config.clone(),
+            ..Default::default()
         }
     }
 }

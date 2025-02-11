@@ -87,7 +87,8 @@ pub async fn ps_put_object(
     let conn = ps_client().await?;
 
     let query_str = format!(
-        "INSERT INTO object_index(bucket_id, object_key, tx_hash, block_number, size_bytes, metadata) VALUES({}, \"{}\", \"{}\", {}, {}, \"{}\")",
+        "INSERT INTO object_index(bucket_id, object_key, tx_hash, block_number, size_bytes, metadata) 
+         VALUES({}, \"{}\", \"{}\", {}, {}, JSON_OBJECT('metadata', CAST('{}' AS JSON)))",
         bucket_id, object_key, tx_hash, block_number, size_bytes, metadata
     );
 
@@ -146,4 +147,17 @@ pub async fn ps_get_account_id(account_name: String) -> Result<u64, Error> {
     let account: AccountId = query(&query_str).fetch_one(&conn).await?;
 
     Ok(account.account_id)
+}
+
+pub async fn ps_get_bucket(account_id: u64, bucket_name: &str) -> Result<Bucket, Error> {
+    let conn = ps_client().await?;
+
+    let query_str = format!(
+        "SELECT * FROM bucket_index WHERE account_id = {} AND bucket_name = \"{}\"",
+        account_id, bucket_name
+    );
+
+    let bucket: Bucket = query(&query_str).fetch_one(&conn).await?;
+
+    Ok(bucket)
 }

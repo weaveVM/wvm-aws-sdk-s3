@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS bucket_index (
     bucket_name VARCHAR(255) NOT NULL,
     tx_hash VARCHAR(66) NOT NULL,
     block_number BIGINT UNSIGNED,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_bucket_account ON bucket_index(account_id);
