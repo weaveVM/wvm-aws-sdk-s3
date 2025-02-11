@@ -28,3 +28,10 @@ pub struct PutObjectBuilder {
     pub metadata: Vec<(String, String)>,
     pub wvm_bundler_tags: Vec<Tag>,
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct GetObjectBuilder {
+    pub config: Config,
+    pub bucket_name: String,
+    pub key: String,
+}

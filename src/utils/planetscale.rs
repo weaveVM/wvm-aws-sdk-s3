@@ -101,7 +101,7 @@ pub async fn ps_get_object(bucket_id: u64, object_key: &str) -> Result<Object, E
     let conn = ps_client().await?;
 
     let query_str = format!(
-        "SELECT id, tx_hash, block_number, size_bytes, metadata FROM object_index WHERE bucket_id = {} AND object_key = \"{}\" AND is_deleted = false",
+        "SELECT * FROM object_index WHERE bucket_id = {} AND object_key = \"{}\" AND is_deleted = false",
         bucket_id, object_key
     );
 

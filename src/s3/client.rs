@@ -1,6 +1,6 @@
 use crate::s3::aws_config::Config;
 use crate::s3::builders::builders::{
-    CreateBucketBuilder, DeleteBucketBuilder, ListBucketBuilder, PutObjectBuilder,
+    CreateBucketBuilder, DeleteBucketBuilder, GetObjectBuilder, ListBucketBuilder, PutObjectBuilder,
 };
 use anyhow::Error;
 
@@ -39,6 +39,13 @@ impl Client {
 
     pub fn put_object(&self) -> PutObjectBuilder {
         PutObjectBuilder {
+            config: self.config.clone(),
+            ..Default::default()
+        }
+    }
+
+    pub fn get_object(&self) -> GetObjectBuilder {
+        GetObjectBuilder {
             config: self.config.clone(),
             ..Default::default()
         }
