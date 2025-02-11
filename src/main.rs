@@ -40,13 +40,17 @@ async fn main() -> Result<(), Error> {
     // println!("{:?}", object);
 
     // get object
-    let object = client
-        .get_object()
-        .bucket(bucket_name)
-        .key(key_name)
-        .send()
-        .await?;
-    println!("{:?}", object);
+    // let object = client
+    //     .get_object()
+    //     .bucket(bucket_name)
+    //     .key(key_name)
+    //     .send()
+    //     .await?;
+    // println!("{:?}", object);
+
+    // list objects
+    let objects = client.list_objects_v2().bucket(bucket_name).send().await?;
+    println!("{:?}", objects);
 
     Ok(())
 }

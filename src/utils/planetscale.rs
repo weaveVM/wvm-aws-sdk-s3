@@ -67,7 +67,7 @@ pub async fn ps_list_objects(bucket_id: u64) -> Result<Vec<Object>, Error> {
     let conn = ps_client().await?;
 
     let query_str = format!(
-        "SELECT id, object_key, tx_hash, block_number, size_bytes, metadata FROM object_index WHERE bucket_id = {} AND is_deleted = false",
+        "SELECT * FROM object_index WHERE bucket_id = {} AND is_deleted = false",
         bucket_id
     );
 

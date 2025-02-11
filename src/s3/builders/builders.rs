@@ -35,3 +35,9 @@ pub struct GetObjectBuilder {
     pub bucket_name: String,
     pub key: String,
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct ListObjectsBuilder {
+    pub config: Config,
+    pub bucket_name: String,
+}
