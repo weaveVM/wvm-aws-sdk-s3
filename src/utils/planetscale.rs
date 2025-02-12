@@ -63,13 +63,17 @@ pub async fn ps_delete_bucket(account_id: u64, bucket_name: &str) -> Result<(), 
     Ok(())
 }
 
-pub async fn ps_list_objects(bucket_id: u64) -> Result<Vec<Object>, Error> {
+pub async fn ps_list_objects(bucket_id: u64, max_keys: Option<i32>) -> Result<Vec<Object>, Error> {
     let conn = ps_client().await?;
 
-    let query_str = format!(
+    let mut query_str = format!(
         "SELECT * FROM object_index WHERE bucket_id = {} AND is_deleted = false",
         bucket_id
     );
+
+    if let Some(max_keys) = max_keys {
+        query_str.push_str(&format!(" LIMIT {}", max_keys));
+    }
 
     let objects: Vec<Object> = query(&query_str).fetch_all(&conn).await?;
 

@@ -40,6 +40,7 @@ pub struct GetObjectBuilder {
 pub struct ListObjectsBuilder {
     pub config: Config,
     pub bucket_name: String,
+    pub max_keys: Option<i32>,
 }
 
 #[derive(Debug, Clone, Default)]
