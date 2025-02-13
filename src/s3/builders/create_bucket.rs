@@ -1,11 +1,17 @@
+use crate::s3::aws_config::Config;
 use crate::s3::bucket::{Bucket, CreateBucketOutput};
-use crate::s3::builders::builders::CreateBucketBuilder;
 use crate::utils::planetscale::{ps_create_bucket, ps_get_account_id, ps_get_account_name};
 use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
 use anyhow::Error;
 use bundler::utils::core::tags::Tag;
 use tokio::time::{sleep, Duration};
+
+#[derive(Debug, Clone, Default)]
+pub struct CreateBucketBuilder {
+    pub config: Config,
+    pub bucket_name: String,
+}
 
 impl CreateBucketBuilder {
     pub fn bucket(mut self, bucket_name: &str) -> Self {

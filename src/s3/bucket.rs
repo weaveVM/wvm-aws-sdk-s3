@@ -16,11 +16,13 @@ pub struct CreateBucketOutput {
     pub bucket_tx: String,
 }
 
-impl CreateBucketOutput {
-    pub fn from(bucket_tx: String) -> Self {
+pub type BucketTx = String;
+
+impl From<BucketTx> for CreateBucketOutput {
+    fn from(value: BucketTx) -> Self {
         Self {
             location: "wvm-ledger".to_string(),
-            bucket_tx,
+            bucket_tx: value,
         }
     }
 }
@@ -31,11 +33,11 @@ pub struct DeleteBucketOutput {
     pub account_name: String,
 }
 
-impl DeleteBucketOutput {
-    pub fn from(bucket_name: String, account_name: String) -> Self {
+impl From<(String, String)> for DeleteBucketOutput {
+    fn from(value: (String, String)) -> Self {
         Self {
-            bucket_name,
-            account_name,
+            bucket_name: value.0,
+            account_name: value.1,
         }
     }
 }

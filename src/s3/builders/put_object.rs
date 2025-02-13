@@ -1,12 +1,22 @@
 use anyhow::Error;
 use bundler::utils::core::tags::Tag;
 
-use crate::s3::builders::builders::PutObjectBuilder;
+use crate::s3::aws_config::Config;
 use crate::s3::object::PutObjectOutput;
 use crate::utils::planetscale::{ps_get_account_id, ps_get_bucket, ps_put_object};
 use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
 use tokio::time::{sleep, Duration};
+
+#[derive(Debug, Clone, Default)]
+pub struct PutObjectBuilder {
+    pub config: Config,
+    pub bucket_name: String,
+    pub key: String,
+    pub data: Vec<u8>,
+    pub metadata: Vec<(String, String)>,
+    pub wvm_bundler_tags: Vec<Tag>,
+}
 
 impl PutObjectBuilder {
     pub fn bucket(mut self, bucket_name: &str) -> Self {

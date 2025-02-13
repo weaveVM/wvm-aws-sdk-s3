@@ -8,7 +8,7 @@ use crate::s3::client::Client;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let aws_config = Config::load_from_env().await?;
+    let aws_config = Config::load()?;
     let client = Client::new(&aws_config)?;
 
     let bucket_name = "aloha";

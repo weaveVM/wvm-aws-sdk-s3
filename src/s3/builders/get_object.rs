@@ -1,8 +1,14 @@
-use anyhow::Error;
-
-use crate::s3::builders::builders::GetObjectBuilder;
+use crate::s3::aws_config::Config;
 use crate::s3::object::Object;
 use crate::utils::planetscale::{ps_get_account_id, ps_get_bucket, ps_get_object};
+use anyhow::Error;
+
+#[derive(Debug, Clone, Default)]
+pub struct GetObjectBuilder {
+    pub config: Config,
+    pub bucket_name: String,
+    pub key: String,
+}
 
 impl GetObjectBuilder {
     pub fn bucket(mut self, bucket_name: &str) -> Self {

@@ -1,8 +1,14 @@
-use anyhow::Error;
-
-use crate::s3::builders::builders::DeleteObjectBuilder;
+use crate::s3::aws_config::Config;
 use crate::s3::object::DeleteObjectOutput;
 use crate::utils::planetscale::{ps_delete_object, ps_get_account_id, ps_get_bucket};
+use anyhow::Error;
+
+#[derive(Debug, Clone, Default)]
+pub struct DeleteObjectBuilder {
+    pub config: Config,
+    pub bucket_name: String,
+    pub key: String,
+}
 
 impl DeleteObjectBuilder {
     pub fn bucket(mut self, bucket_name: &str) -> Self {

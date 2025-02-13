@@ -1,8 +1,11 @@
 use crate::s3::aws_config::Config;
-use crate::s3::builders::builders::{
-    CreateBucketBuilder, DeleteBucketBuilder, DeleteObjectBuilder, GetObjectBuilder,
-    ListBucketBuilder, ListObjectsBuilder, PutObjectBuilder,
-};
+use crate::s3::builders::create_bucket::CreateBucketBuilder;
+use crate::s3::builders::delete_bucket::DeleteBucketBuilder;
+use crate::s3::builders::delete_object::DeleteObjectBuilder;
+use crate::s3::builders::get_object::GetObjectBuilder;
+use crate::s3::builders::list_buckets::ListBucketBuilder;
+use crate::s3::builders::list_objects::ListObjectsBuilder;
+use crate::s3::builders::put_object::PutObjectBuilder;
 use anyhow::Error;
 
 #[derive(Debug, Clone, Default)]
