@@ -1,9 +1,12 @@
 use crate::s3::aws_config::Config;
+use crate::s3::builders::RequireBucket;
 use crate::s3::object::Object;
 use crate::utils::planetscale::{ps_get_account_id, ps_get_bucket, ps_list_objects};
 use anyhow::Error;
+use macros::weavevm;
 
 #[derive(Debug, Clone, Default)]
+#[weavevm(require_bucket)]
 pub struct ListObjectsBuilder<'a> {
     pub config: &'a Config,
     pub bucket_name: String,
@@ -11,11 +14,6 @@ pub struct ListObjectsBuilder<'a> {
 }
 
 impl<'a> ListObjectsBuilder<'a> {
-    pub fn bucket(mut self, bucket_name: &str) -> Self {
-        self.bucket_name = bucket_name.to_string();
-        self
-    }
-
     pub fn max_keys(mut self, input: i32) -> Self {
         self.max_keys = Some(input);
         self

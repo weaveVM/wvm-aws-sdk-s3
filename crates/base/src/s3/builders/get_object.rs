@@ -1,9 +1,12 @@
 use crate::s3::aws_config::Config;
+use crate::s3::builders::RequireBucket;
 use crate::s3::object::Object;
 use crate::utils::planetscale::{ps_get_account_id, ps_get_bucket, ps_get_object};
 use anyhow::Error;
+use macros::weavevm;
 
 #[derive(Debug, Clone, Default)]
+#[weavevm(require_bucket)]
 pub struct GetObjectBuilder<'a> {
     pub config: &'a Config,
     pub bucket_name: String,
@@ -11,11 +14,6 @@ pub struct GetObjectBuilder<'a> {
 }
 
 impl<'a> GetObjectBuilder<'a> {
-    pub fn bucket(mut self, bucket_name: &str) -> Self {
-        self.bucket_name = bucket_name.to_string();
-        self
-    }
-
     pub fn key(mut self, key: &str) -> Self {
         self.key = key.to_string();
         self

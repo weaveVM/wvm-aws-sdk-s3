@@ -1,24 +1,22 @@
 use crate::s3::aws_config::Config;
 use crate::s3::bucket::{Bucket, CreateBucketOutput};
+use crate::s3::builders::RequireBucket;
 use crate::utils::planetscale::{ps_create_bucket, ps_get_account_id, ps_get_account_name};
 use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
 use anyhow::Error;
 use bundler::utils::core::tags::Tag;
+use macros::weavevm;
 use tokio::time::{sleep, Duration};
 
 #[derive(Debug, Clone, Default)]
+#[weavevm(require_bucket)]
 pub struct CreateBucketBuilder<'a> {
     pub config: &'a Config,
     pub bucket_name: String,
 }
 
 impl<'a> CreateBucketBuilder<'a> {
-    pub fn bucket(mut self, bucket_name: &str) -> Self {
-        self.bucket_name = bucket_name.to_string();
-        self
-    }
-
     pub async fn send(self) -> Result<CreateBucketOutput, Error> {
         let account_name = self.config.account_name.clone();
         let mut config = self.config;

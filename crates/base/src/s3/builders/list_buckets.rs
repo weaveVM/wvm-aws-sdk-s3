@@ -10,11 +10,6 @@ pub struct ListBucketBuilder<'a> {
 }
 
 impl<'a> ListBucketBuilder<'a> {
-    pub fn max_keys(mut self, input: i32) -> Self {
-        self.max_keys = Some(input);
-        self
-    }
-
     pub async fn send(&mut self) -> Result<Vec<Bucket>, Error> {
         let account_id = self.config.account_id.unwrap();
         let buckets = ps_list_buckets(account_id, self.max_keys).await?;

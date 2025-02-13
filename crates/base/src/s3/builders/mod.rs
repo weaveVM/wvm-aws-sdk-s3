@@ -6,6 +6,11 @@ pub mod list_buckets;
 pub mod list_objects;
 pub mod put_object;
 
-// pub trait RequireBucket {
-//     fn bucket(mut self, bucket_name: &str) -> Self;
-// }
+pub trait RequireBucket {
+    fn bucket(mut self, bucket_name: &str) -> Self
+    where
+        Self: Sized,
+    {
+        self
+    }
+}
