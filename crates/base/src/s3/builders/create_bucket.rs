@@ -9,11 +9,10 @@ use bundler::utils::core::tags::Tag;
 use macros::weavevm;
 use tokio::time::{sleep, Duration};
 
-#[derive(Debug, Clone, Default)]
 #[weavevm(require_bucket)]
+#[derive(Debug, Clone, Default)]
 pub struct CreateBucketBuilder<'a> {
     pub config: &'a Config,
-    pub bucket_name: String,
 }
 
 impl<'a> CreateBucketBuilder<'a> {

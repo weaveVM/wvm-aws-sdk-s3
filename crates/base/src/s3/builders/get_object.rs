@@ -5,11 +5,10 @@ use crate::utils::planetscale::{ps_get_account_id, ps_get_bucket, ps_get_object}
 use anyhow::Error;
 use macros::weavevm;
 
-#[derive(Debug, Clone, Default)]
 #[weavevm(require_bucket)]
+#[derive(Debug, Clone, Default)]
 pub struct GetObjectBuilder<'a> {
     pub config: &'a Config,
-    pub bucket_name: String,
     pub key: String,
 }
 

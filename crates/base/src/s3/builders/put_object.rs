@@ -10,11 +10,10 @@ use crate::utils::wvm_bundler::post_data_to_bundler;
 use macros::weavevm;
 use tokio::time::{sleep, Duration};
 
-#[derive(Debug, Clone, Default)]
 #[weavevm(require_bucket)]
+#[derive(Debug, Clone, Default)]
 pub struct PutObjectBuilder<'a> {
     pub config: &'a Config,
-    pub bucket_name: String,
     pub key: String,
     pub data: Vec<u8>,
     pub metadata: Vec<(String, String)>,

@@ -5,11 +5,10 @@ use crate::utils::planetscale::{ps_delete_bucket, ps_get_account_id};
 use anyhow::Error;
 use macros::weavevm;
 
-#[derive(Debug, Clone, Default)]
 #[weavevm(require_bucket)]
+#[derive(Debug, Clone, Default)]
 pub struct DeleteBucketBuilder<'a> {
     pub config: &'a Config,
-    pub bucket_name: String,
 }
 
 impl<'a> DeleteBucketBuilder<'a> {
