@@ -8,12 +8,12 @@ use bundler::utils::core::tags::Tag;
 use tokio::time::{sleep, Duration};
 
 #[derive(Debug, Clone, Default)]
-pub struct CreateBucketBuilder {
-    pub config: Config,
+pub struct CreateBucketBuilder<'a> {
+    pub config: &'a Config,
     pub bucket_name: String,
 }
 
-impl CreateBucketBuilder {
+impl<'a> CreateBucketBuilder<'a> {
     pub fn bucket(mut self, bucket_name: &str) -> Self {
         self.bucket_name = bucket_name.to_string();
         self
@@ -22,7 +22,6 @@ impl CreateBucketBuilder {
     pub async fn send(self) -> Result<CreateBucketOutput, Error> {
         let account_name = self.config.account_name.clone();
         let mut config = self.config;
-        config.account_id = Some(ps_get_account_id(account_name.clone()).await?);
 
         let bucket_tx = create_bucket(account_name, self.bucket_name.clone()).await?;
         // sleep 1s for tx inclusion on WeaveVM block

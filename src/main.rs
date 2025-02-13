@@ -9,7 +9,7 @@ use crate::s3::client::Client;
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let aws_config = Config::load()?;
-    let client = Client::new(&aws_config)?;
+    let client = Client::new(Some(&aws_config))?;
 
     let bucket_name = "aloha";
     let key_name = "./hello-world.txt";

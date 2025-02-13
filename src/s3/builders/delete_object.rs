@@ -4,13 +4,13 @@ use crate::utils::planetscale::{ps_delete_object, ps_get_account_id, ps_get_buck
 use anyhow::Error;
 
 #[derive(Debug, Clone, Default)]
-pub struct DeleteObjectBuilder {
-    pub config: Config,
+pub struct DeleteObjectBuilder<'a> {
+    pub config: &'a Config,
     pub bucket_name: String,
     pub key: String,
 }
 
-impl DeleteObjectBuilder {
+impl<'a> DeleteObjectBuilder<'a> {
     pub fn bucket(mut self, bucket_name: &str) -> Self {
         self.bucket_name = bucket_name.to_string();
         self
@@ -22,7 +22,6 @@ impl DeleteObjectBuilder {
     }
 
     pub async fn send(mut self) -> Result<DeleteObjectOutput, Error> {
-        self.config.account_id = Some(ps_get_account_id(self.config.account_name.clone()).await?);
         let account_id = self.config.account_id.unwrap();
         let bucket = ps_get_bucket(account_id, &self.bucket_name).await?;
         let _deleted_object = ps_delete_object(bucket.id.parse::<u64>()?, &self.key).await?;

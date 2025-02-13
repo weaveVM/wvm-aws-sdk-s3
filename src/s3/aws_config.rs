@@ -1,3 +1,4 @@
+use crate::s3::client::Client;
 use crate::s3::S3_CONFIG;
 use crate::utils::constants::WVM_RPC_URL;
 use crate::utils::env_utils::get_env_var;
@@ -12,6 +13,12 @@ pub struct Config {
     pub account_name: String,
     pub secret_access_key: String,
     pub account_id: Option<u64>,
+}
+
+impl<'a> Default for &'a Config {
+    fn default() -> &'a Config {
+        S3_CONFIG.get().unwrap()
+    }
 }
 
 impl Config {

@@ -9,8 +9,8 @@ use crate::utils::wvm_bundler::post_data_to_bundler;
 use tokio::time::{sleep, Duration};
 
 #[derive(Debug, Clone, Default)]
-pub struct PutObjectBuilder {
-    pub config: Config,
+pub struct PutObjectBuilder<'a> {
+    pub config: &'a Config,
     pub bucket_name: String,
     pub key: String,
     pub data: Vec<u8>,
@@ -18,7 +18,7 @@ pub struct PutObjectBuilder {
     pub wvm_bundler_tags: Vec<Tag>,
 }
 
-impl PutObjectBuilder {
+impl<'a> PutObjectBuilder<'a> {
     pub fn bucket(mut self, bucket_name: &str) -> Self {
         self.bucket_name = bucket_name.to_string();
         self
@@ -61,7 +61,6 @@ impl PutObjectBuilder {
     }
 
     pub async fn send(mut self) -> Result<PutObjectOutput, Error> {
-        self.config.account_id = Some(ps_get_account_id(self.config.account_name.clone()).await?);
         let account_id = self.config.account_id.unwrap();
         let wvm_tx =
             post_data_to_bundler(self.clone().data, Some(self.clone().wvm_bundler_tags)).await?;
