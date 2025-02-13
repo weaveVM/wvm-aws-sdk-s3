@@ -1383,6 +1383,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "base"
+version = "0.1.0"
+dependencies = [
+ "alloy 0.11.0",
+ "anyhow",
+ "bundler",
+ "chrono",
+ "dotenv",
+ "planetscale-driver",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 2.0.98",
+ "tokio",
+]
+
+[[package]]
 name = "base16ct"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5297,21 +5315,6 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
-]
-
-[[package]]
-name = "wvm-aws-sdk-s3"
-version = "0.1.0"
-dependencies = [
- "alloy 0.11.0",
- "anyhow",
- "bundler",
- "chrono",
- "dotenv",
- "planetscale-driver",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
