@@ -12,6 +12,7 @@ use syn::parse::{Parse, ParseStream, Result};
 use syn::{Ident, Token};
 
 /// Our expected attribute arguments, e.g., `require_bucket`
+// Custom parser for the attribute arguments.
 struct WeavevmArgs {
     require_bucket: bool,
 }
@@ -51,7 +52,7 @@ pub fn weavevm(attr: TokenStream, item: TokenStream) -> TokenStream {
                     .any(|f| f.ident.as_ref().map_or(false, |id| id == "bucket_name"));
                 if !already_exists {
                     // Create a new field: `pub bucket_name: String`
-                    let new_field: syn::Field = parse_quote! {
+                    let new_field: syn::Field = syn::parse_quote! {
                         pub bucket_name: String
                     };
                     fields_named.named.push(new_field);
@@ -68,13 +69,13 @@ pub fn weavevm(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     }
 
-    // If require_bucket is set, generate the trait implementation.
-    let impl_tokens = if args.require_bucket {
+    // Generate an inherent impl with the `bucket` method if required.
+    let method_tokens = if args.require_bucket {
         let name = &input.ident;
         let generics = &input.generics;
         quote! {
-            impl #generics RequireBucket for #name #generics {
-                fn bucket(mut self, bucket_name: &str) -> Self {
+            impl #generics #name #generics {
+                pub fn bucket(mut self, bucket_name: &str) -> Self {
                     self.bucket_name = bucket_name.to_string();
                     self
                 }
@@ -84,10 +85,10 @@ pub fn weavevm(attr: TokenStream, item: TokenStream) -> TokenStream {
         quote! {}
     };
 
-    // Combine the (possibly modified) struct and the trait implementation.
+    // Combine the (possibly modified) struct and the generated impl.
     let expanded = quote! {
         #input
-        #impl_tokens
+        #method_tokens
     };
 
     TokenStream::from(expanded)
