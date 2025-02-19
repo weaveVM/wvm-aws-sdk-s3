@@ -1,3 +1,4 @@
+use crate::services::wvm_s3_services::WvmS3Services;
 use actix_web::{
     delete, get, post, put,
     web::{Data, Json, Query},
@@ -6,4 +7,4 @@ use actix_web::{
 use std::sync::Arc;
 
 // #[put("/{bucket}")]
-async fn put_bucket(service: Data<Arc<WipfsServices>>, req: HttpRequest) {}
+async fn put_bucket(service: Data<Arc<WvmS3Services>>, req: HttpRequest) {}

@@ -30,3 +30,4 @@ diesel = { version = "2", features = ["chrono"] }
 diesel-async = { version = "0.4.1", features = ["deadpool"] }
 shuttle-diesel-async = { git = "https://github.com/aumetra/shuttle-diesel-async", version = "0.1.0", features = ["bb8", "deadpool"] }
 actix-web = "4.3.1"
+shuttle-runtime = "0.50.0"

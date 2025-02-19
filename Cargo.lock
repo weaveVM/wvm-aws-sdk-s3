@@ -2178,6 +2178,7 @@ dependencies = [
  "chrono",
  "diesel_derives",
  "itoa",
+ "serde_json",
 ]
 
 [[package]]
@@ -4657,6 +4658,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shuttle-diesel-async",
+ "shuttle-runtime",
  "shuttle-shared-db",
  "tokio",
 ]

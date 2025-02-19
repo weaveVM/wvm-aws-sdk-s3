@@ -20,7 +20,8 @@ chrono.workspace = true
 async-trait = "0.1.86"
 num_cpus = "1.16.0"
 shuttle-shared-db.workspace = true
-diesel.workspace = true
+diesel = { workspace = true, features = ["serde_json"]}
 diesel-async.workspace = true
 shuttle-diesel-async.workspace = true
 actix-web.workspace = true
+shuttle-runtime.workspace = true
