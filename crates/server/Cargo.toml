@@ -25,3 +25,5 @@ diesel-async.workspace = true
 shuttle-diesel-async.workspace = true
 actix-web.workspace = true
 shuttle-runtime.workspace = true
+planetscale = { path = "../planetscale" }
+base = { path = "../base" }

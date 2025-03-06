@@ -1584,6 +1584,7 @@ dependencies = [
  "chrono",
  "dotenv",
  "macros",
+ "planetscale",
  "planetscale-driver",
  "proc-macro2",
  "quote",
@@ -3786,6 +3787,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 
 [[package]]
+name = "planetscale"
+version = "0.1.0"
+dependencies = [
+ "planetscale-driver",
+ "shuttle-runtime",
+]
+
+[[package]]
 name = "planetscale-driver"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4648,12 +4657,14 @@ dependencies = [
  "alloy 0.11.0",
  "anyhow",
  "async-trait",
+ "base",
  "bundler",
  "chrono",
  "diesel",
  "diesel-async",
  "dotenv",
  "num_cpus",
+ "planetscale",
  "planetscale-driver",
  "serde",
  "serde_json",

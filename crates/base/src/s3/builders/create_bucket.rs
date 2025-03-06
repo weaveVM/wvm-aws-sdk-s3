@@ -27,7 +27,10 @@ impl<'a> CreateBucketBuilder<'a> {
         let block = get_transaction(bucket_tx.clone()).await?;
 
         if let Some(block) = block {
+            let db_conn = config.db_driver.get_conn();
+
             let _bucket = ps_create_bucket(
+                db_conn,
                 config.account_id.unwrap(),
                 &self.bucket_name,
                 &bucket_tx,

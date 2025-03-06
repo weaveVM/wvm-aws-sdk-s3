@@ -1,0 +1,8 @@
+[package]
+name = "planetscale"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+planetscale-driver.workspace = true
+shuttle-runtime.workspace = true

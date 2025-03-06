@@ -4,6 +4,7 @@ use crate::utils::constants::WVM_RPC_URL;
 use crate::utils::env_utils::get_env_var;
 use crate::utils::wvm::derive_compressed_pubkey;
 use anyhow::Error;
+use planetscale::PlanetScaleDriver;
 use std::sync::Arc;
 
 #[derive(Debug, Default, Clone)]
@@ -13,6 +14,7 @@ pub struct Config {
     pub account_name: String,
     pub secret_access_key: String,
     pub account_id: Option<u64>,
+    pub db_driver: Arc<PlanetScaleDriver>,
 }
 
 impl<'a> Default for &'a Config {
@@ -37,6 +39,11 @@ impl Config {
                 wvm_rpc_url: WVM_RPC_URL.to_string(),
                 account_name: address,
                 account_id: None,
+                db_driver: Arc::new(PlanetScaleDriver {
+                    host: "".to_string(),
+                    username: "".to_string(),
+                    password: "".to_string(),
+                }),
             };
 
             let s3_conf = S3_CONFIG.get_or_init(|| Arc::new(conf));

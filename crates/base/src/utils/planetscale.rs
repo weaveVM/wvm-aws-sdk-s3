@@ -1,23 +1,15 @@
 use crate::s3::account::{AccountId, AccountName};
 use crate::s3::bucket::Bucket;
 use crate::s3::object::Object;
-use crate::utils::env_utils::get_env_var;
 use anyhow::Error;
 use planetscale_driver::{query, PSConnection};
+use std::sync::Arc;
 
-async fn ps_client() -> Result<PSConnection, Error> {
-    let host = get_env_var("DATABASE_HOST")?;
-    let username = get_env_var("DATABASE_USERNAME")?;
-    let password = get_env_var("DATABASE_PASSWORD")?;
-
-    let conn: PSConnection = PSConnection::new(&host, &username, &password);
-
-    Ok(conn)
-}
-
-pub async fn ps_list_buckets(account_id: u64, max_keys: Option<i32>) -> Result<Vec<Bucket>, Error> {
-    let conn = ps_client().await?;
-
+pub async fn ps_list_buckets(
+    conn: PSConnection,
+    account_id: u64,
+    max_keys: Option<i32>,
+) -> Result<Vec<Bucket>, Error> {
     let mut query_str = format!(
         "SELECT id, account_id, bucket_name, tx_hash, block_number, created_at FROM bucket_index WHERE account_id = {}",
         account_id
@@ -33,13 +25,12 @@ pub async fn ps_list_buckets(account_id: u64, max_keys: Option<i32>) -> Result<V
 }
 
 pub async fn ps_create_bucket(
+    conn: PSConnection,
     account_id: u64,
     bucket_name: &str,
     tx_hash: &str,
     block_number: u64,
 ) -> Result<(), Error> {
-    let conn = ps_client().await?;
-
     let query_str = format!(
         "INSERT INTO bucket_index(account_id, bucket_name, tx_hash, block_number) VALUES({}, \"{}\", \"{}\", {})",
         account_id, bucket_name, tx_hash, block_number
@@ -50,9 +41,11 @@ pub async fn ps_create_bucket(
     Ok(())
 }
 
-pub async fn ps_delete_bucket(account_id: u64, bucket_name: &str) -> Result<(), Error> {
-    let conn = ps_client().await?;
-
+pub async fn ps_delete_bucket(
+    conn: PSConnection,
+    account_id: u64,
+    bucket_name: &str,
+) -> Result<(), Error> {
     let query_str = format!(
         "DELETE FROM bucket_index WHERE account_id = {} AND bucket_name = \"{}\"",
         account_id, bucket_name
@@ -63,9 +56,11 @@ pub async fn ps_delete_bucket(account_id: u64, bucket_name: &str) -> Result<(), 
     Ok(())
 }
 
-pub async fn ps_list_objects(bucket_id: u64, max_keys: Option<i32>) -> Result<Vec<Object>, Error> {
-    let conn = ps_client().await?;
-
+pub async fn ps_list_objects(
+    conn: PSConnection,
+    bucket_id: u64,
+    max_keys: Option<i32>,
+) -> Result<Vec<Object>, Error> {
     let mut query_str = format!(
         "SELECT * FROM object_index WHERE bucket_id = {} AND is_deleted = false",
         bucket_id
@@ -81,6 +76,7 @@ pub async fn ps_list_objects(bucket_id: u64, max_keys: Option<i32>) -> Result<Ve
 }
 
 pub async fn ps_put_object(
+    conn: PSConnection,
     bucket_id: u64,
     object_key: &str,
     tx_hash: &str,
@@ -88,8 +84,6 @@ pub async fn ps_put_object(
     size_bytes: u64,
     metadata: &str,
 ) -> Result<(), Error> {
-    let conn = ps_client().await?;
-
     let query_str = format!(
         "INSERT INTO object_index(bucket_id, object_key, tx_hash, block_number, size_bytes, metadata) 
          VALUES({}, \"{}\", \"{}\", {}, {}, JSON_OBJECT('metadata', CAST('{}' AS JSON)))",
@@ -101,9 +95,11 @@ pub async fn ps_put_object(
     Ok(())
 }
 
-pub async fn ps_get_object(bucket_id: u64, object_key: &str) -> Result<Object, Error> {
-    let conn = ps_client().await?;
-
+pub async fn ps_get_object(
+    conn: PSConnection,
+    bucket_id: u64,
+    object_key: &str,
+) -> Result<Object, Error> {
     let query_str = format!(
         "SELECT * FROM object_index WHERE bucket_id = {} AND object_key = \"{}\" AND is_deleted = false",
         bucket_id, object_key
@@ -114,9 +110,11 @@ pub async fn ps_get_object(bucket_id: u64, object_key: &str) -> Result<Object, E
     Ok(object)
 }
 
-pub async fn ps_delete_object(bucket_id: u64, object_key: &str) -> Result<(), Error> {
-    let conn = ps_client().await?;
-
+pub async fn ps_delete_object(
+    conn: PSConnection,
+    bucket_id: u64,
+    object_key: &str,
+) -> Result<(), Error> {
     let query_str = format!(
         "UPDATE object_index SET is_deleted = true WHERE bucket_id = {} AND object_key = \"{}\"",
         bucket_id, object_key
@@ -127,9 +125,7 @@ pub async fn ps_delete_object(bucket_id: u64, object_key: &str) -> Result<(), Er
     Ok(())
 }
 
-pub async fn ps_get_account_name(account_id: u64) -> Result<String, Error> {
-    let conn = ps_client().await?;
-
+pub async fn ps_get_account_name(conn: PSConnection, account_id: u64) -> Result<String, Error> {
     let query_str = format!(
         "SELECT account_name FROM accounts WHERE id = {}",
         account_id
@@ -140,9 +136,7 @@ pub async fn ps_get_account_name(account_id: u64) -> Result<String, Error> {
     Ok(account.account_name)
 }
 
-pub async fn ps_get_account_id(account_name: String) -> Result<u64, Error> {
-    let conn = ps_client().await?;
-
+pub async fn ps_get_account_id(conn: PSConnection, account_name: String) -> Result<u64, Error> {
     let query_str = format!(
         "SELECT id FROM accounts WHERE account_name = \"{}\"",
         account_name
@@ -153,9 +147,11 @@ pub async fn ps_get_account_id(account_name: String) -> Result<u64, Error> {
     Ok(account.account_id)
 }
 
-pub async fn ps_get_bucket(account_id: u64, bucket_name: &str) -> Result<Bucket, Error> {
-    let conn = ps_client().await?;
-
+pub async fn ps_get_bucket(
+    conn: PSConnection,
+    account_id: u64,
+    bucket_name: &str,
+) -> Result<Bucket, Error> {
     let query_str = format!(
         "SELECT * FROM bucket_index WHERE account_id = {} AND bucket_name = \"{}\"",
         account_id, bucket_name

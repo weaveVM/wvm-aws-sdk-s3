@@ -20,8 +20,10 @@ impl<'a> DeleteObjectBuilder<'a> {
 
     pub async fn send(mut self) -> Result<DeleteObjectOutput, Error> {
         let account_id = self.config.account_id.unwrap();
-        let bucket = ps_get_bucket(account_id, &self.bucket_name).await?;
-        let _deleted_object = ps_delete_object(bucket.id.parse::<u64>()?, &self.key).await?;
+        let db_conn = self.config.db_driver.get_conn();
+        let bucket = ps_get_bucket(db_conn.clone(), account_id, &self.bucket_name).await?;
+        let _deleted_object =
+            ps_delete_object(db_conn, bucket.id.parse::<u64>()?, &self.key).await?;
         let output = DeleteObjectOutput::from(true, self.key);
         Ok(output)
     }

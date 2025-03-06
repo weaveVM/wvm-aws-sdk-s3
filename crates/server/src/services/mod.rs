@@ -1,2 +1,2 @@
-pub mod db_service;
+mod buckets;
 pub mod wvm_s3_services;

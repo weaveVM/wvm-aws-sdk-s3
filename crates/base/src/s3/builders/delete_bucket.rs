@@ -14,7 +14,8 @@ pub struct DeleteBucketBuilder<'a> {
 impl<'a> DeleteBucketBuilder<'a> {
     pub async fn send(mut self) -> Result<DeleteBucketOutput, Error> {
         let account_id = self.config.account_id.unwrap();
-        let _deleted_bucket = ps_delete_bucket(account_id, &self.bucket_name).await?;
+        let db_conn = self.config.db_driver.get_conn();
+        let _deleted_bucket = ps_delete_bucket(db_conn, account_id, &self.bucket_name).await?;
         let output = DeleteBucketOutput::from((self.bucket_name, self.config.account_name.clone()));
         Ok(output)
     }

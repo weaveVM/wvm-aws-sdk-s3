@@ -65,10 +65,17 @@ impl<'a> PutObjectBuilder<'a> {
         sleep(Duration::from_secs(1)).await;
 
         let block = get_transaction(wvm_tx.clone()).await?;
-        let bucket = ps_get_bucket(account_id, &self.bucket_name).await?;
+        let bucket = ps_get_bucket(
+            self.config.db_driver.clone().get_conn(),
+            account_id,
+            &self.bucket_name,
+        )
+        .await?;
 
         if let Some(block) = block {
+            let db_conn = self.config.db_driver.get_conn();
             let _bucket = ps_put_object(
+                db_conn,
                 bucket.id.parse::<u64>()?,
                 &self.key,
                 &wvm_tx,

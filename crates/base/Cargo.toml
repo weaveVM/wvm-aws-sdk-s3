@@ -21,3 +21,4 @@ syn.workspace = true
 quote.workspace = true
 proc-macro2.workspace = true
 macros = { path = "../macros" }
+planetscale = { path = "../planetscale" }

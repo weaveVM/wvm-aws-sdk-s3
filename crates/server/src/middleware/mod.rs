@@ -7,5 +7,10 @@ pub async fn my_mw(
     req: ServiceRequest,
     next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, Error> {
+    // invoke the wrapped middleware or service
+    let res = next.call(req).await?;
+
+    // post-processing
+
     Ok(res)
 }

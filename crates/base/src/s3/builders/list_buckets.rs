@@ -12,7 +12,8 @@ pub struct ListBucketBuilder<'a> {
 impl<'a> ListBucketBuilder<'a> {
     pub async fn send(&mut self) -> Result<Vec<Bucket>, Error> {
         let account_id = self.config.account_id.unwrap();
-        let buckets = ps_list_buckets(account_id, self.max_keys).await?;
+        let db_conn = self.config.db_driver.get_conn();
+        let buckets = ps_list_buckets(db_conn, account_id, self.max_keys).await?;
         Ok(buckets)
     }
 }
