@@ -1,12 +1,15 @@
 use crate::actix_web_service::CustomShuttleActixWeb;
+use crate::services::buckets::bucket_service::WvmBucketService;
 use crate::services::wvm_s3_services::WvmS3Services;
 use actix_web::get;
 use actix_web::web::{Data, ServiceConfig};
 use base::s3::aws_config::Config;
 use base::s3::client::Client;
+use base::utils::constants::WVM_RPC_URL;
 use base::utils::wvm::derive_compressed_pubkey;
 use planetscale::PlanetScaleDriver;
-use std::sync::Arc;
+use std::cell::OnceCell;
+use std::sync::{Arc, OnceLock};
 
 mod actix_web_service;
 mod handlers;
@@ -18,23 +21,36 @@ async fn hello_world() -> &'static str {
     "Hello World!"
 }
 
-async fn get_services(secrets: shuttle_runtime::SecretStore) -> Arc<WvmS3Services> {
+static S3_CLIENT_CONFIG: OnceLock<Config> = OnceLock::new();
+
+async fn get_services(secrets: shuttle_runtime::SecretStore) -> Arc<WvmS3Services<'static>> {
     let driver = Arc::new(PlanetScaleDriver::from(&secrets));
-    let private_key = secrets.get("WVM_AWS_S3_PK").unwrap();
-    let address = derive_compressed_pubkey(&private_key).unwrap();
-    let secret_access_key = secrets.get("SECRET_ACCESS_KEY").unwrap();
 
-    let s3_client = Client::new(Some(&Config {
-        private_key,
-        wvm_rpc_url: secrets.get("SECRET_ACCESS_KEY").unwrap(),
-        account_name: address,
-        secret_access_key,
-        account_id: None,
-        db_driver: driver.clone(),
-    }))
-    .unwrap();
+    let _ = S3_CLIENT_CONFIG.get_or_init(|| {
+        let private_key = secrets.get("WVM_AWS_S3_PK").unwrap();
+        let address = derive_compressed_pubkey(&private_key).unwrap();
+        let secret_access_key = secrets.get("SECRET_ACCESS_KEY").unwrap();
 
-    Arc::new(WvmS3Services::new(driver))
+        Config {
+            private_key,
+            wvm_rpc_url: WVM_RPC_URL.to_string(),
+            account_name: address,
+            secret_access_key,
+            account_id: None,
+            db_driver: driver.clone(),
+        }
+    });
+
+    let s3_client = Client::new(Some(S3_CLIENT_CONFIG.get().unwrap())).unwrap();
+
+    let s3_client = Arc::new(s3_client);
+
+    let bucket_service = Arc::new(WvmBucketService {
+        db_service: driver.clone(),
+        s3_client: s3_client.clone(),
+    });
+
+    Arc::new(WvmS3Services::new(driver, bucket_service))
 }
 
 #[shuttle_runtime::main]

@@ -13,10 +13,16 @@ pub struct PutBucket {
 }
 
 #[put("/{bucket}")]
-async fn put_bucket(
-    service: Data<Arc<WvmS3Services>>,
+async fn put_bucket<'a>(
+    service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<PutBucket>,
     req: HttpRequest,
 ) -> Result<Json<Vec<String>>> {
+    let bucket_name = &info.bucket;
+    let res = service
+        .bucket_service
+        .s3_client
+        .create_bucket()
+        .bucket(bucket_name);
     Ok(Json(vec![]))
 }
