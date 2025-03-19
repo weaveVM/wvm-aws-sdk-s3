@@ -1,4 +1,7 @@
 use crate::services::wvm_s3_services::WvmS3Services;
+use actix_web::http::header::HeaderMap;
+use actix_web::http::StatusCode;
+use actix_web::web::Bytes;
 use actix_web::{
     delete, get, post, put, web,
     web::{Data, Json, Query},
@@ -21,18 +24,27 @@ pub struct BucketAndObjectInfo {
 }
 
 #[put("/{bucket}")]
-async fn put_bucket<'a>(
+async fn create_bucket<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketInfo>,
     req: HttpRequest,
-) -> Result<Json<Vec<String>>> {
+) -> Result<HttpResponse> {
     let bucket_name = &info.bucket;
     let res = service
         .bucket_service
         .s3_client
         .create_bucket()
-        .bucket(bucket_name);
-    Ok(Json(vec![]))
+        .bucket(bucket_name)
+        .send()
+        .await;
+
+    if res.is_ok() {
+        HttpResponse::Ok()
+            .insert_header(("Location", format!("/{}", bucket_name)))
+            .await
+    } else {
+        HttpResponse::InternalServerError().await
+    }
 }
 
 #[delete("/{bucket}")]
@@ -40,14 +52,23 @@ async fn delete_bucket<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketInfo>,
     req: HttpRequest,
-) -> Result<Json<Vec<String>>> {
+) -> Result<HttpResponse> {
     let bucket_name = &info.bucket;
     let res = service
         .bucket_service
         .s3_client
         .delete_bucket()
-        .bucket(bucket_name);
-    Ok(Json(vec![]))
+        .bucket(bucket_name)
+        .send()
+        .await;
+
+    if res.is_ok() {
+        HttpResponse::Ok()
+            .status(StatusCode::from_u16(204).unwrap())
+            .await
+    } else {
+        HttpResponse::InternalServerError().await
+    }
 }
 
 #[delete("/{bucket}/{key}")]
@@ -55,7 +76,7 @@ async fn delete_object<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
-) -> Result<Json<Vec<String>>> {
+) -> Result<HttpResponse> {
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let res = service
@@ -63,8 +84,17 @@ async fn delete_object<'a>(
         .s3_client
         .delete_object()
         .bucket(bucket_name)
-        .key(key_name);
-    Ok(Json(vec![]))
+        .key(key_name)
+        .send()
+        .await;
+
+    if res.is_ok() {
+        HttpResponse::Ok()
+            .status(StatusCode::from_u16(204).unwrap())
+            .await
+    } else {
+        HttpResponse::InternalServerError().await
+    }
 }
 
 #[get("/{bucket}/{key}")]
@@ -72,7 +102,7 @@ async fn get_object<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
-) -> Result<Json<Vec<String>>> {
+) -> Result<HttpResponse> {
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let res = service
@@ -80,8 +110,15 @@ async fn get_object<'a>(
         .s3_client
         .get_object()
         .bucket(bucket_name)
-        .key(key_name);
-    Ok(Json(vec![]))
+        .key(key_name)
+        .send()
+        .await;
+
+    if let Ok(obj) = res {
+        Ok(HttpResponse::Ok().json(obj))
+    } else {
+        HttpResponse::InternalServerError().await
+    }
 }
 
 #[get("/")]
@@ -116,15 +153,23 @@ async fn list_objects<'a>(
 async fn put_object<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketAndObjectInfo>,
+    body: Bytes,
     req: HttpRequest,
 ) -> Result<Json<Vec<u8>>> {
     let bucket_name = &info.bucket;
     let key_name = &info.key;
+    let content_type = req
+        .headers()
+        .get("Content-Type")
+        .map(|e| e.to_str().unwrap())
+        .unwrap_or("");
     let res = service
         .bucket_service
         .s3_client
-        .get_object()
+        .put_object()
         .bucket(bucket_name)
-        .key(key_name);
+        .key(key_name)
+        .body(body.to_vec())
+        .content_type(content_type);
     Ok(Json(vec![]))
 }
