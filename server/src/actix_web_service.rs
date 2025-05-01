@@ -1,4 +1,5 @@
-use crate::middleware::my_mw;
+use crate::middleware::auth_middleware;
+use actix_web::middleware::NormalizePath;
 use async_trait::async_trait;
 use std::net::SocketAddr;
 
@@ -19,7 +20,8 @@ where
         let server = actix_web::HttpServer::new(move || {
             actix_web::App::new()
                 .configure(self.0.clone())
-                .wrap(actix_web::middleware::from_fn(my_mw))
+                .wrap(actix_web::middleware::from_fn(auth_middleware))
+                .wrap(NormalizePath::trim())
         })
         .workers(worker_count)
         .bind(addr)?

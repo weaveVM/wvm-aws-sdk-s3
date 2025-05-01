@@ -24,14 +24,15 @@ impl<'a> Default for &'a Config {
 }
 
 impl Config {
-    pub fn load() -> Result<Arc<Self>, Error> {
+    pub fn load(aws_s3_pk: Option<String>, access_key: Option<String>) -> Result<Arc<Self>, Error> {
         let is_initialized = S3_CONFIG.get();
 
         if let Some(conf) = is_initialized {
             Ok(conf.clone())
         } else {
-            let private_key = get_env_var("WVM_AWS_S3_PK")?;
-            let secret_access_key = get_env_var("SECRET_ACCESS_KEY")?;
+            let private_key = get_env_var("WVM_AWS_S3_PK").unwrap_or_else(|_| aws_s3_pk.unwrap());
+            let secret_access_key =
+                get_env_var("SECRET_ACCESS_KEY").unwrap_or_else(|_| access_key.unwrap());
             let address = derive_compressed_pubkey(&private_key)?;
             let conf = Self {
                 private_key,

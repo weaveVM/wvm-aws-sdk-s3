@@ -1,3 +1,4 @@
+use crate::s3::S3_CONFIG;
 use crate::utils::env_utils::get_env_var;
 use anyhow::Error;
 use bundler::utils::core::bundle::Bundle;
@@ -8,7 +9,8 @@ pub async fn post_data_to_bundler(
     envelope_data: Vec<u8>,
     external_tags: Option<Vec<Tag>>,
 ) -> Result<String, Error> {
-    let private_key = get_env_var("WVM_AWS_S3_PK")?;
+    let conf = S3_CONFIG.get().unwrap();
+    let private_key = conf.private_key.clone();
 
     let mut envelopes: Vec<Envelope> = vec![];
     let mut tags: Vec<Tag> = vec![Tag::new(

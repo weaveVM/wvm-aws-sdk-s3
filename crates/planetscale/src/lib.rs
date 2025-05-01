@@ -1,5 +1,4 @@
 use planetscale_driver::PSConnection;
-use shuttle_runtime::SecretStore;
 
 #[derive(Debug, Default, Clone)]
 pub struct PlanetScaleDriver {
@@ -19,15 +18,5 @@ impl PlanetScaleDriver {
 
     pub fn get_conn(&self) -> PSConnection {
         PSConnection::new(&self.host, &self.username, &self.password)
-    }
-}
-
-impl<'a> From<&'a SecretStore> for PlanetScaleDriver {
-    fn from(value: &'a SecretStore) -> Self {
-        Self {
-            host: value.get("DATABASE_HOST").unwrap(),
-            username: value.get("DATABASE_USERNAME").unwrap(),
-            password: value.get("DATABASE_PASSWORD").unwrap(),
-        }
     }
 }

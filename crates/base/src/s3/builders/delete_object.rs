@@ -18,8 +18,7 @@ impl<'a> DeleteObjectBuilder<'a> {
         self
     }
 
-    pub async fn send(mut self) -> Result<DeleteObjectOutput, Error> {
-        let account_id = self.config.account_id.unwrap();
+    pub async fn send(mut self, account_id: u64) -> Result<DeleteObjectOutput, Error> {
         let db_conn = self.config.db_driver.get_conn();
         let bucket = ps_get_bucket(db_conn.clone(), account_id, &self.bucket_name).await?;
         let _deleted_object =

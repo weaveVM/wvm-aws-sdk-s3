@@ -1,7 +1,9 @@
 use crate::services::wvm_s3_services::WvmS3Services;
+use crate::utils::auth::extract_req_user;
+use actix_web::error::HttpError;
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
-use actix_web::web::Bytes;
+use actix_web::web::{Bytes, ServiceConfig};
 use actix_web::{
     delete, get, post, put, web,
     web::{Data, Json, Query},
@@ -23,27 +25,39 @@ pub struct BucketAndObjectInfo {
     key: String,
 }
 
+#[get("/abcd")]
+async fn abcd() -> &'static str {
+    "Hello World!"
+}
+
 #[put("/{bucket}")]
 async fn create_bucket<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
+
+    println!("PASSED");
+
     let res = service
         .bucket_service
         .s3_client
         .create_bucket()
         .bucket(bucket_name)
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
+
+    println!("PASSED 2");
 
     if res.is_ok() {
         HttpResponse::Ok()
             .insert_header(("Location", format!("/{}", bucket_name)))
             .await
     } else {
-        HttpResponse::InternalServerError().await
+        let a = HttpResponse::InternalServerError().await;
+        Err(actix_web::error::ErrorNotFound("a".to_string()))
     }
 }
 
@@ -53,13 +67,14 @@ async fn delete_bucket<'a>(
     info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let res = service
         .bucket_service
         .s3_client
         .delete_bucket()
         .bucket(bucket_name)
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
 
     if res.is_ok() {
@@ -77,6 +92,7 @@ async fn delete_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let res = service
@@ -85,7 +101,7 @@ async fn delete_object<'a>(
         .delete_object()
         .bucket(bucket_name)
         .key(key_name)
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
 
     if res.is_ok() {
@@ -103,6 +119,7 @@ async fn get_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let res = service
@@ -111,7 +128,7 @@ async fn get_object<'a>(
         .get_object()
         .bucket(bucket_name)
         .key(key_name)
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
 
     if let Ok(obj) = res {
@@ -126,7 +143,13 @@ async fn list_buckets<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     req: HttpRequest,
 ) -> Result<Json<Vec<Bucket>>> {
-    let res = service.bucket_service.s3_client.list_buckets().send().await;
+    let auth = extract_req_user(&req)?;
+    let res = service
+        .bucket_service
+        .s3_client
+        .list_buckets()
+        .send(auth.0.owner_id as u64)
+        .await;
     let res = res.map_err(|e| actix_web::error::ErrorNotFound(e))?;
     Ok(Json(res))
 }
@@ -137,13 +160,14 @@ async fn list_objects<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<Json<Vec<Object>>> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let res: std::result::Result<Vec<Object>, anyhow::Error> = service
         .bucket_service
         .s3_client
         .list_objects_v2()
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
     let res = res.map_err(|e| actix_web::error::ErrorNotFound(e))?;
     Ok(Json(res))
@@ -156,6 +180,7 @@ async fn put_object<'a>(
     body: Bytes,
     req: HttpRequest,
 ) -> Result<Json<Vec<u8>>> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let content_type = req
@@ -172,4 +197,16 @@ async fn put_object<'a>(
         .body(body.to_vec())
         .content_type(content_type);
     Ok(Json(vec![]))
+}
+
+// App configuration function
+pub fn configure_app_s3_endpoints(cfg: &mut ServiceConfig) {
+    cfg.service(create_bucket)
+        .service(delete_bucket)
+        .service(delete_object)
+        .service(get_object)
+        .service(list_buckets)
+        .service(list_objects)
+        .service(put_object)
+        .service(abcd);
 }

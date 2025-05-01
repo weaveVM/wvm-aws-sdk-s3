@@ -4,10 +4,12 @@ version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "load-s3-server"
+name = "server"
 path = "src/main.rs"
 
 [dependencies]
+shuttle-actix-web = "0.53.0"
+shuttle-runtime = "0.53.0"
 anyhow.workspace = true
 dotenv.workspace = true
 bundler.workspace = true
@@ -20,10 +22,9 @@ chrono.workspace = true
 async-trait = "0.1.86"
 num_cpus = "1.16.0"
 shuttle-shared-db.workspace = true
-diesel = { workspace = true, features = ["serde_json"]}
-diesel-async.workspace = true
 shuttle-diesel-async.workspace = true
 actix-web.workspace = true
-shuttle-runtime.workspace = true
-planetscale = { path = "../planetscale" }
-base = { path = "../base" }
+planetscale = { path = "../crates/planetscale" }
+base = { path = "../crates/base" }
+ureq.workspace = true
+xmlwriter = "0.1.0"
