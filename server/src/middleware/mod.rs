@@ -31,18 +31,24 @@ pub async fn auth_middleware(
 }
 
 pub fn extract_aws_access_key(auth_header: &str) -> Result<String, actix_web::Error> {
-    // Find `Credential=...`
-    let credential = auth_header
-        .split(' ')
-        .find(|part| part.trim().starts_with("Credential="))
-        .and_then(|part| {
-            part.trim()
-                .strip_prefix("Credential=")
-                .and_then(|cred| cred.split('/').next()) // only keep access key
-        })
-        .ok_or_else(|| ErrorUnauthorized(S3LoadErrors::CredentialNotPresent.to_xml(None, None)))?;
+    if auth_header.contains("Credential=") {
+        // Find `Credential=...`
+        let credential = auth_header
+            .split(' ')
+            .find(|part| part.trim().starts_with("Credential="))
+            .and_then(|part| {
+                part.trim()
+                    .strip_prefix("Credential=")
+                    .and_then(|cred| cred.split('/').next()) // only keep access key
+            })
+            .ok_or_else(|| {
+                ErrorUnauthorized(S3LoadErrors::CredentialNotPresent.to_xml(None, None))
+            })?;
 
-    Ok(credential.to_string())
+        Ok(credential.to_string())
+    } else {
+        Ok(auth_header.to_string())
+    }
 }
 
 async fn check_user_auth<'a>(

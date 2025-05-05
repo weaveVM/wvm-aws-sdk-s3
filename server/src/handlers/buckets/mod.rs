@@ -1,6 +1,8 @@
 use crate::error::s3_load_errors::S3LoadErrors;
 use crate::services::wvm_s3_services::WvmS3Services;
 use crate::utils::auth::extract_req_user;
+use crate::utils::object::{extract_metadata, find_key_in_metadata, retrieve_object_bytes};
+use crate::utils::time::to_rfc_7231_datetime;
 use actix_web::error::{ErrorBadRequest, ErrorNotFound, ErrorUnauthorized, HttpError};
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
@@ -110,7 +112,9 @@ async fn delete_object<'a>(
     if let Ok(_) = res {
         res_builder.await
     } else {
-        res_builder.insert_header(("Error", "ObjectNotDeleted")).await
+        res_builder
+            .insert_header(("Error", "ObjectNotDeleted"))
+            .await
     }
 }
 
@@ -133,13 +137,33 @@ async fn get_object<'a>(
         .await;
 
     if let Ok(obj) = res {
-        Ok(HttpResponse::Ok().json(obj))
-    } else {
-        Err(ErrorNotFound(S3LoadErrors::NoSuchObject.to_xml(
-            Some(format!("{}/{}", bucket_name, key_name)),
-            None,
-        )))
+        let metadata = extract_metadata(obj.metadata);
+        let content_type = find_key_in_metadata(&metadata, "Content-Type".to_string())
+            .unwrap_or_else(|| String::from("application/octet-stream"));
+
+        let tx_hash = obj.tx_hash;
+        let body = retrieve_object_bytes(&tx_hash);
+
+        if let Some(body) = body {
+            let mut resp = HttpResponse::Ok()
+                .insert_header(("Content-Length", obj.size_bytes.to_string()))
+                .insert_header(("ETag", tx_hash))
+                .insert_header((
+                    "Last-Modified",
+                    to_rfc_7231_datetime(&obj.created_at)
+                        .unwrap_or_else(|| String::from("Thu, 01 Jan 1970 00:00:00 GMT")),
+                ))
+                .content_type(content_type)
+                .body(body);
+
+            return Ok(resp);
+        }
     }
+
+    Err(ErrorNotFound(S3LoadErrors::NoSuchObject.to_xml(
+        Some(format!("{}/{}", bucket_name, key_name)),
+        None,
+    )))
 }
 
 #[get("/")]
@@ -211,9 +235,10 @@ async fn put_object<'a>(
             .insert_header(("ETag", res.tx_hash))
             .await
     } else {
-        Err(ErrorBadRequest(
-            S3LoadErrors::ObjectNotCreated.to_xml(Some(format!("{}/{}", bucket_name, key_name)), None),
-        ))
+        Err(ErrorBadRequest(S3LoadErrors::ObjectNotCreated.to_xml(
+            Some(format!("{}/{}", bucket_name, key_name)),
+            None,
+        )))
     }
 }
 
