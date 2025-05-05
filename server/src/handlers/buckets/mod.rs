@@ -1,6 +1,7 @@
+use crate::error::s3_load_errors::S3LoadErrors;
 use crate::services::wvm_s3_services::WvmS3Services;
 use crate::utils::auth::extract_req_user;
-use actix_web::error::HttpError;
+use actix_web::error::{ErrorBadRequest, ErrorNotFound, ErrorUnauthorized, HttpError};
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::{Bytes, ServiceConfig};
@@ -39,8 +40,6 @@ async fn create_bucket<'a>(
     let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
 
-    println!("PASSED");
-
     let res = service
         .bucket_service
         .s3_client
@@ -49,15 +48,14 @@ async fn create_bucket<'a>(
         .send(auth.0.owner_id as u64)
         .await;
 
-    println!("PASSED 2");
-
     if res.is_ok() {
         HttpResponse::Ok()
             .insert_header(("Location", format!("/{}", bucket_name)))
             .await
     } else {
-        let a = HttpResponse::InternalServerError().await;
-        Err(actix_web::error::ErrorNotFound("a".to_string()))
+        Err(ErrorUnauthorized(
+            S3LoadErrors::BucketNotCreated.to_xml(Some(bucket_name.to_string()), None),
+        ))
     }
 }
 
@@ -77,12 +75,14 @@ async fn delete_bucket<'a>(
         .send(auth.0.owner_id as u64)
         .await;
 
-    if res.is_ok() {
+    if let Ok(_) = res {
         HttpResponse::Ok()
             .status(StatusCode::from_u16(204).unwrap())
             .await
     } else {
-        HttpResponse::InternalServerError().await
+        Err(ErrorUnauthorized(
+            S3LoadErrors::BucketNotDeleted.to_xml(Some(bucket_name.to_string()), None),
+        ))
     }
 }
 
@@ -104,12 +104,13 @@ async fn delete_object<'a>(
         .send(auth.0.owner_id as u64)
         .await;
 
-    if res.is_ok() {
-        HttpResponse::Ok()
-            .status(StatusCode::from_u16(204).unwrap())
-            .await
+    let mut ok_resp = HttpResponse::Ok();
+    let mut res_builder = ok_resp.status(StatusCode::from_u16(204).unwrap());
+
+    if let Ok(_) = res {
+        res_builder.await
     } else {
-        HttpResponse::InternalServerError().await
+        res_builder.insert_header(("Error", "ObjectNotDeleted")).await
     }
 }
 
@@ -134,7 +135,10 @@ async fn get_object<'a>(
     if let Ok(obj) = res {
         Ok(HttpResponse::Ok().json(obj))
     } else {
-        HttpResponse::InternalServerError().await
+        Err(ErrorNotFound(S3LoadErrors::NoSuchObject.to_xml(
+            Some(format!("{}/{}", bucket_name, key_name)),
+            None,
+        )))
     }
 }
 
@@ -169,7 +173,9 @@ async fn list_objects<'a>(
         .list_objects_v2()
         .send(auth.0.owner_id as u64)
         .await;
-    let res = res.map_err(|e| actix_web::error::ErrorNotFound(e))?;
+    let res = res.map_err(|e| {
+        ErrorNotFound(S3LoadErrors::NoSuchBucket.to_xml(Some(bucket_name.to_string()), None))
+    })?;
     Ok(Json(res))
 }
 
@@ -179,7 +185,7 @@ async fn put_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     body: Bytes,
     req: HttpRequest,
-) -> Result<Json<Vec<u8>>> {
+) -> Result<HttpResponse> {
     let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
@@ -195,8 +201,20 @@ async fn put_object<'a>(
         .bucket(bucket_name)
         .key(key_name)
         .body(body.to_vec())
-        .content_type(content_type);
-    Ok(Json(vec![]))
+        .content_type(content_type)
+        .send(auth.0.owner_id as u64)
+        .await;
+
+    if let Ok(res) = res {
+        HttpResponse::Ok()
+            .status(StatusCode::from_u16(200).unwrap())
+            .insert_header(("ETag", res.tx_hash))
+            .await
+    } else {
+        Err(ErrorBadRequest(
+            S3LoadErrors::ObjectNotCreated.to_xml(Some(format!("{}/{}", bucket_name, key_name)), None),
+        ))
+    }
 }
 
 // App configuration function

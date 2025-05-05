@@ -1,3 +1,4 @@
+use crate::error::s3_load_errors::S3LoadErrors;
 use crate::error::ErrorXmlFactory;
 use crate::services::wvm_s3_services::WvmS3Services;
 use crate::utils::auth::CurrentUser;
@@ -16,7 +17,9 @@ pub async fn auth_middleware(
     let service = req.app_data::<Data<Arc<WvmS3Services>>>().unwrap();
     let is_valid_key = check_user_auth(&req, &service).await.unwrap_or(false);
     if !is_valid_key {
-        return Err(ErrorUnauthorized(ErrorXmlFactory::unauthorized().build()));
+        return Err(ErrorUnauthorized(
+            S3LoadErrors::Unauthorized.to_xml(None, None),
+        ));
     }
     // Pre-processing
 
@@ -37,13 +40,7 @@ pub fn extract_aws_access_key(auth_header: &str) -> Result<String, actix_web::Er
                 .strip_prefix("Credential=")
                 .and_then(|cred| cred.split('/').next()) // only keep access key
         })
-        .ok_or_else(|| {
-            ErrorUnauthorized(
-                ErrorXmlFactory::unauthorized()
-                    .message("Credential attribute is not present")
-                    .build(),
-            )
-        })?;
+        .ok_or_else(|| ErrorUnauthorized(S3LoadErrors::CredentialNotPresent.to_xml(None, None)))?;
 
     Ok(credential.to_string())
 }
@@ -56,7 +53,9 @@ async fn check_user_auth<'a>(
         .headers()
         .get("authorization")
         .and_then(|header| header.to_str().ok())
-        .ok_or_else(|| ErrorUnauthorized(ErrorXmlFactory::unauthorized().build()))?;
+        .ok_or_else(|| {
+            ErrorUnauthorized(S3LoadErrors::AuthorizationNotPresent.to_xml(None, None))
+        })?;
 
     // We don't need bearer tokens here.
     let token = token.replace("Bearer ", "");

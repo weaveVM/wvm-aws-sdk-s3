@@ -1,3 +1,5 @@
+pub mod s3_load_errors;
+
 use xmlwriter::{Options, XmlWriter};
 
 pub struct ErrorXmlFactory {
