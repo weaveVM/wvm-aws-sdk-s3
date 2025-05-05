@@ -16,22 +16,24 @@ pub struct CreateBucketBuilder<'a> {
 }
 
 impl<'a> CreateBucketBuilder<'a> {
-    pub async fn send(self) -> Result<CreateBucketOutput, Error> {
+    pub async fn send(self, account_id: u64) -> Result<CreateBucketOutput, Error> {
         let account_name = self.config.account_name.clone();
         let mut config = self.config;
 
         let bucket_tx = create_bucket(account_name, self.bucket_name.clone()).await?;
+        println!("bucket tx{}", bucket_tx);
         // sleep 1s for tx inclusion on WeaveVM block
         sleep(Duration::from_secs(1)).await;
 
         let block = get_transaction(bucket_tx.clone()).await?;
+        println!("block {:?}", block);
 
         if let Some(block) = block {
             let db_conn = config.db_driver.get_conn();
 
             let _bucket = ps_create_bucket(
                 db_conn,
-                config.account_id.unwrap(),
+                account_id,
                 &self.bucket_name,
                 &bucket_tx,
                 block.block_number.unwrap_or_default(),

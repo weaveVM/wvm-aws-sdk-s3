@@ -10,11 +10,15 @@ pub struct WvmBucketService<'a> {
 }
 
 impl<'a> WvmBucketService<'a> {
-    pub async fn create_bucket(&self, bucket_name: String) -> Result<CreateBucketOutput, Error> {
+    pub async fn create_bucket(
+        &self,
+        bucket_name: String,
+        account_id: u64,
+    ) -> Result<CreateBucketOutput, Error> {
         self.s3_client
             .create_bucket()
             .bucket(&bucket_name)
-            .send()
+            .send(account_id)
             .await
     }
 }

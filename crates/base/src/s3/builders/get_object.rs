@@ -18,8 +18,7 @@ impl<'a> GetObjectBuilder<'a> {
         self
     }
 
-    pub async fn send(mut self) -> Result<Object, Error> {
-        let account_id = self.config.account_id.unwrap();
+    pub async fn send(mut self, account_id: u64) -> Result<Object, Error> {
         let db_conn = self.config.db_driver.get_conn();
         let bucket = ps_get_bucket(db_conn.clone(), account_id, &self.bucket_name).await?;
         let object = ps_get_object(db_conn, bucket.id.parse::<u64>()?, &self.key).await?;

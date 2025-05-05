@@ -57,8 +57,7 @@ impl<'a> PutObjectBuilder<'a> {
         self
     }
 
-    pub async fn send(mut self) -> Result<PutObjectOutput, Error> {
-        let account_id = self.config.account_id.unwrap();
+    pub async fn send(mut self, account_id: u64) -> Result<PutObjectOutput, Error> {
         let wvm_tx =
             post_data_to_bundler(self.clone().data, Some(self.clone().wvm_bundler_tags)).await?;
         // sleep 1s for tx inclusion

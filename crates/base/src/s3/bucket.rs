@@ -30,14 +30,14 @@ impl From<BucketTx> for CreateBucketOutput {
 #[derive(Debug, Clone, Default)]
 pub struct DeleteBucketOutput {
     pub bucket_name: String,
-    pub account_name: String,
+    pub account_id: u64,
 }
 
-impl From<(String, String)> for DeleteBucketOutput {
-    fn from(value: (String, String)) -> Self {
+impl From<(String, u64)> for DeleteBucketOutput {
+    fn from(value: (String, u64)) -> Self {
         Self {
             bucket_name: value.0,
-            account_name: value.1,
+            account_id: value.1,
         }
     }
 }

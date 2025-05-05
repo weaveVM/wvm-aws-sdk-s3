@@ -1,7 +1,12 @@
+use crate::error::s3_load_errors::S3LoadErrors;
 use crate::services::wvm_s3_services::WvmS3Services;
+use crate::utils::auth::extract_req_user;
+use crate::utils::object::{extract_metadata, find_key_in_metadata, retrieve_object_bytes};
+use crate::utils::time::to_rfc_7231_datetime;
+use actix_web::error::{ErrorBadRequest, ErrorNotFound, ErrorUnauthorized, HttpError};
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
-use actix_web::web::Bytes;
+use actix_web::web::{Bytes, ServiceConfig};
 use actix_web::{
     delete, get, post, put, web,
     web::{Data, Json, Query},
@@ -23,19 +28,26 @@ pub struct BucketAndObjectInfo {
     key: String,
 }
 
+#[get("/abcd")]
+async fn abcd() -> &'static str {
+    "Hello World!"
+}
+
 #[put("/{bucket}")]
 async fn create_bucket<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
+
     let res = service
         .bucket_service
         .s3_client
         .create_bucket()
         .bucket(bucket_name)
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
 
     if res.is_ok() {
@@ -43,7 +55,9 @@ async fn create_bucket<'a>(
             .insert_header(("Location", format!("/{}", bucket_name)))
             .await
     } else {
-        HttpResponse::InternalServerError().await
+        Err(ErrorUnauthorized(
+            S3LoadErrors::BucketNotCreated.to_xml(Some(bucket_name.to_string()), None),
+        ))
     }
 }
 
@@ -53,21 +67,24 @@ async fn delete_bucket<'a>(
     info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let res = service
         .bucket_service
         .s3_client
         .delete_bucket()
         .bucket(bucket_name)
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
 
-    if res.is_ok() {
+    if let Ok(_) = res {
         HttpResponse::Ok()
             .status(StatusCode::from_u16(204).unwrap())
             .await
     } else {
-        HttpResponse::InternalServerError().await
+        Err(ErrorUnauthorized(
+            S3LoadErrors::BucketNotDeleted.to_xml(Some(bucket_name.to_string()), None),
+        ))
     }
 }
 
@@ -77,6 +94,7 @@ async fn delete_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let res = service
@@ -85,15 +103,18 @@ async fn delete_object<'a>(
         .delete_object()
         .bucket(bucket_name)
         .key(key_name)
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
 
-    if res.is_ok() {
-        HttpResponse::Ok()
-            .status(StatusCode::from_u16(204).unwrap())
-            .await
+    let mut ok_resp = HttpResponse::Ok();
+    let mut res_builder = ok_resp.status(StatusCode::from_u16(204).unwrap());
+
+    if let Ok(_) = res {
+        res_builder.await
     } else {
-        HttpResponse::InternalServerError().await
+        res_builder
+            .insert_header(("Error", "ObjectNotDeleted"))
+            .await
     }
 }
 
@@ -103,6 +124,7 @@ async fn get_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let res = service
@@ -111,14 +133,37 @@ async fn get_object<'a>(
         .get_object()
         .bucket(bucket_name)
         .key(key_name)
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
 
     if let Ok(obj) = res {
-        Ok(HttpResponse::Ok().json(obj))
-    } else {
-        HttpResponse::InternalServerError().await
+        let metadata = extract_metadata(obj.metadata);
+        let content_type = find_key_in_metadata(&metadata, "Content-Type".to_string())
+            .unwrap_or_else(|| String::from("application/octet-stream"));
+
+        let tx_hash = obj.tx_hash;
+        let body = retrieve_object_bytes(&tx_hash);
+
+        if let Some(body) = body {
+            let mut resp = HttpResponse::Ok()
+                .insert_header(("Content-Length", obj.size_bytes.to_string()))
+                .insert_header(("ETag", tx_hash))
+                .insert_header((
+                    "Last-Modified",
+                    to_rfc_7231_datetime(&obj.created_at)
+                        .unwrap_or_else(|| String::from("Thu, 01 Jan 1970 00:00:00 GMT")),
+                ))
+                .content_type(content_type)
+                .body(body);
+
+            return Ok(resp);
+        }
     }
+
+    Err(ErrorNotFound(S3LoadErrors::NoSuchObject.to_xml(
+        Some(format!("{}/{}", bucket_name, key_name)),
+        None,
+    )))
 }
 
 #[get("/")]
@@ -126,7 +171,13 @@ async fn list_buckets<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     req: HttpRequest,
 ) -> Result<Json<Vec<Bucket>>> {
-    let res = service.bucket_service.s3_client.list_buckets().send().await;
+    let auth = extract_req_user(&req)?;
+    let res = service
+        .bucket_service
+        .s3_client
+        .list_buckets()
+        .send(auth.0.owner_id as u64)
+        .await;
     let res = res.map_err(|e| actix_web::error::ErrorNotFound(e))?;
     Ok(Json(res))
 }
@@ -137,15 +188,18 @@ async fn list_objects<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<Json<Vec<Object>>> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let res: std::result::Result<Vec<Object>, anyhow::Error> = service
         .bucket_service
         .s3_client
         .list_objects_v2()
-        .send()
+        .send(auth.0.owner_id as u64)
         .await;
-    let res = res.map_err(|e| actix_web::error::ErrorNotFound(e))?;
+    let res = res.map_err(|e| {
+        ErrorNotFound(S3LoadErrors::NoSuchBucket.to_xml(Some(bucket_name.to_string()), None))
+    })?;
     Ok(Json(res))
 }
 
@@ -155,7 +209,8 @@ async fn put_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     body: Bytes,
     req: HttpRequest,
-) -> Result<Json<Vec<u8>>> {
+) -> Result<HttpResponse> {
+    let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
     let content_type = req
@@ -170,6 +225,31 @@ async fn put_object<'a>(
         .bucket(bucket_name)
         .key(key_name)
         .body(body.to_vec())
-        .content_type(content_type);
-    Ok(Json(vec![]))
+        .content_type(content_type)
+        .send(auth.0.owner_id as u64)
+        .await;
+
+    if let Ok(res) = res {
+        HttpResponse::Ok()
+            .status(StatusCode::from_u16(200).unwrap())
+            .insert_header(("ETag", res.tx_hash))
+            .await
+    } else {
+        Err(ErrorBadRequest(S3LoadErrors::ObjectNotCreated.to_xml(
+            Some(format!("{}/{}", bucket_name, key_name)),
+            None,
+        )))
+    }
+}
+
+// App configuration function
+pub fn configure_app_s3_endpoints(cfg: &mut ServiceConfig) {
+    cfg.service(create_bucket)
+        .service(delete_bucket)
+        .service(delete_object)
+        .service(get_object)
+        .service(list_buckets)
+        .service(list_objects)
+        .service(put_object)
+        .service(abcd);
 }
