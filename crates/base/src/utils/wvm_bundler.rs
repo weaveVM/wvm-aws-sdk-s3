@@ -11,6 +11,8 @@ pub async fn post_data_to_bundler(
 ) -> Result<String, Error> {
     let conf = S3_CONFIG.get().unwrap();
     let private_key = conf.private_key.clone();
+    let load0_api_key = Some(std::env::var("API_INTERNAL_KEY").unwrap_or("".to_string()));
+
 
     let mut envelopes: Vec<Envelope> = vec![];
     let mut tags: Vec<Tag> = vec![Tag::new(
@@ -35,7 +37,7 @@ pub async fn post_data_to_bundler(
         .envelopes(envelopes)
         .build()
         .expect("ERROR SENDING BUNDLE")
-        .propagate()
+        .propagate_to_load0(load0_api_key)
         .await
         .unwrap();
 

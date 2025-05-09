@@ -2,4 +2,5 @@
 
 .env
 .shuttle
-Secrets.toml
+Secrets.toml.shuttle*
+Secrets*.toml
