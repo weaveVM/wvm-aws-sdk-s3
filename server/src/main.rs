@@ -70,11 +70,6 @@ fn configure_env_vars(secrets: &shuttle_runtime::SecretStore) {
             "API_INTERNAL_KEY",
             secrets.get("API_INTERNAL_KEY").unwrap_or("".to_string()),
         );
-
-        std::env::set_var(
-            "LOAD0_API_KEY",
-            secrets.get("LOAD0_API_KEY").unwrap_or("".to_string()),
-        );
     }
 }
 
