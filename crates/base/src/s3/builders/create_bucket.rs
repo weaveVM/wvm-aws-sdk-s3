@@ -1,6 +1,8 @@
+use crate::error::s3_load_errors::S3LoadErrors;
 use crate::s3::aws_config::Config;
 use crate::s3::bucket::{Bucket, CreateBucketOutput};
 use crate::s3::builders::RequireBucket;
+use crate::utils::planetscale::ps_get_bucket;
 use crate::utils::planetscale::{ps_create_bucket, ps_get_account_id, ps_get_account_name};
 use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
@@ -16,33 +18,47 @@ pub struct CreateBucketBuilder<'a> {
 }
 
 impl<'a> CreateBucketBuilder<'a> {
-    pub async fn send(self, account_id: u64) -> Result<CreateBucketOutput, Error> {
+    pub async fn send(self, account_id: u64) -> Result<CreateBucketOutput, S3LoadErrors> {
         let account_name = self.config.account_name.clone();
         let mut config = self.config;
+        let db_conn = config.db_driver.get_conn();
+        let bucket_name = &self.bucket_name;
 
-        let bucket_tx = create_bucket(account_name, self.bucket_name.clone()).await?;
-        println!("bucket tx{}", bucket_tx);
-        // sleep 1s for tx inclusion on WeaveVM block
-        sleep(Duration::from_secs(1)).await;
+        let curr_bucket = ps_get_bucket(db_conn.clone(), account_id, bucket_name).await;
 
-        let block = get_transaction(bucket_tx.clone()).await?;
-        println!("block {:?}", block);
+        // Bucket does not exist and it can be created
+        if let Ok(bucket) = curr_bucket {
+            if bucket.account_id == account_id.to_string() {
+                Err(S3LoadErrors::BucketAlreadyOwnedByYou)
+            } else {
+                Err(S3LoadErrors::BucketAlreadyExists)
+            }
+        } else {
+            let bucket_tx = create_bucket(account_name, self.bucket_name.clone())
+                .await
+                .map_err(|_| S3LoadErrors::BucketNotCreated)?;
+            // sleep 1s for tx inclusion on WeaveVM block
+            sleep(Duration::from_secs(1)).await;
 
-        if let Some(block) = block {
-            let db_conn = config.db_driver.get_conn();
+            let block = get_transaction(bucket_tx.clone())
+                .await
+                .map_err(|_| S3LoadErrors::BucketNotCreated)?;
 
-            let _bucket = ps_create_bucket(
-                db_conn,
-                account_id,
-                &self.bucket_name,
-                &bucket_tx,
-                block.block_number.unwrap_or_default(),
-            )
-            .await?;
+            if let Some(block) = block {
+                let _bucket = ps_create_bucket(
+                    db_conn,
+                    account_id,
+                    &bucket_name,
+                    &bucket_tx,
+                    block.block_number.unwrap_or_default(),
+                )
+                .await
+                .map_err(|_| S3LoadErrors::BucketNotCreated)?;
+            }
+
+            let output = CreateBucketOutput::from(bucket_tx);
+            Ok(output)
         }
-
-        let output = CreateBucketOutput::from(bucket_tx);
-        Ok(output)
     }
 }
 

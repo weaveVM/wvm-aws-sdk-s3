@@ -1,3 +1,4 @@
+pub mod error;
 pub mod s3;
 pub mod utils;
 use anyhow::Error;

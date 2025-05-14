@@ -13,7 +13,6 @@ pub async fn post_data_to_bundler(
     let private_key = conf.private_key.clone();
     let load0_api_key = Some(std::env::var("API_INTERNAL_KEY").unwrap_or("".to_string()));
 
-
     let mut envelopes: Vec<Envelope> = vec![];
     let mut tags: Vec<Tag> = vec![Tag::new(
         "Protocol".to_string(),

@@ -11,6 +11,8 @@ pub enum S3LoadErrors {
     BucketNotCreated,
     NoSuchBucket,
     ObjectNotCreated,
+    BucketAlreadyExists,
+    BucketAlreadyOwnedByYou,
 }
 
 impl S3LoadErrors {
@@ -38,6 +40,14 @@ impl S3LoadErrors {
                 "InvalidRequest",
                 "Object could not be created and the reason is ambiguous.",
             ),
+            S3LoadErrors::BucketAlreadyExists => (
+                "BucketAlreadyExists",
+                "The requested bucket name is not available. The bucket namespace is shared by all users of the system. Specify a different name and try again."
+            ),
+            S3LoadErrors::BucketAlreadyOwnedByYou => (
+                "BucketAlreadyOwnedByYou",
+                "The bucket that you tried to create already exists, and you own it."
+            )
         };
 
         ErrorXmlFactory::new()
