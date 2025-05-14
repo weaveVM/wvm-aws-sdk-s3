@@ -15,7 +15,6 @@ use std::cell::OnceCell;
 use std::sync::{Arc, OnceLock};
 
 mod actix_web_service;
-mod error;
 mod handlers;
 mod middleware;
 mod services;

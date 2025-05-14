@@ -1,4 +1,5 @@
 use anyhow::Error;
+use base::error::s3_load_errors::S3LoadErrors;
 use base::s3::bucket::CreateBucketOutput;
 use base::s3::client::Client;
 use planetscale::PlanetScaleDriver;
@@ -14,7 +15,7 @@ impl<'a> WvmBucketService<'a> {
         &self,
         bucket_name: String,
         account_id: u64,
-    ) -> Result<CreateBucketOutput, Error> {
+    ) -> Result<CreateBucketOutput, S3LoadErrors> {
         self.s3_client
             .create_bucket()
             .bucket(&bucket_name)
