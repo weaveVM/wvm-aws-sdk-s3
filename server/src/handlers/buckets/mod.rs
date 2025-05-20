@@ -1,4 +1,3 @@
-use crate::error::s3_load_errors::S3LoadErrors;
 use crate::services::wvm_s3_services::WvmS3Services;
 use crate::utils::auth::extract_req_user;
 use crate::utils::object::{extract_metadata, find_key_in_metadata, retrieve_object_bytes};
@@ -12,6 +11,7 @@ use actix_web::{
     web::{Data, Json, Query},
     HttpRequest, HttpResponse, Result,
 };
+use base::error::s3_load_errors::S3LoadErrors;
 use base::s3::bucket::Bucket;
 use base::s3::object::Object;
 use serde::{Deserialize, Serialize};

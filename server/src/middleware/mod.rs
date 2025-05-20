@@ -1,5 +1,3 @@
-use crate::error::s3_load_errors::S3LoadErrors;
-use crate::error::ErrorXmlFactory;
 use crate::services::wvm_s3_services::WvmS3Services;
 use crate::utils::auth::CurrentUser;
 use actix_web::body::MessageBody;
@@ -8,6 +6,7 @@ use actix_web::error::ErrorUnauthorized;
 use actix_web::middleware::Next;
 use actix_web::web::Data;
 use actix_web::{Error, HttpMessage, HttpRequest};
+use base::error::s3_load_errors::S3LoadErrors;
 use std::sync::Arc;
 
 pub async fn auth_middleware(

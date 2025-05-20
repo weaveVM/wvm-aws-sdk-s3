@@ -1,3 +1,4 @@
+use crate::error::s3_load_errors::S3LoadErrors;
 use crate::s3::aws_config::Config;
 use crate::s3::builders::RequireBucket;
 use crate::s3::object::DeleteObjectOutput;
@@ -18,11 +19,20 @@ impl<'a> DeleteObjectBuilder<'a> {
         self
     }
 
-    pub async fn send(mut self, account_id: u64) -> Result<DeleteObjectOutput, Error> {
+    pub async fn send(mut self, account_id: u64) -> Result<DeleteObjectOutput, S3LoadErrors> {
         let db_conn = self.config.db_driver.get_conn();
-        let bucket = ps_get_bucket(db_conn.clone(), account_id, &self.bucket_name).await?;
-        let _deleted_object =
-            ps_delete_object(db_conn, bucket.id.parse::<u64>()?, &self.key).await?;
+        let bucket = ps_get_bucket(db_conn.clone(), account_id, &self.bucket_name)
+            .await
+            .map_err(|_| S3LoadErrors::ObjectNotDeleted)?;
+
+        let bucket_id = bucket
+            .id
+            .parse::<u64>()
+            .map_err(|e| S3LoadErrors::ObjectNotDeleted)?;
+
+        let _deleted_object = ps_delete_object(db_conn, bucket_id, &self.key)
+            .await
+            .map_err(|_| S3LoadErrors::ObjectNotDeleted)?;
         let output = DeleteObjectOutput::from(true, self.key);
         Ok(output)
     }

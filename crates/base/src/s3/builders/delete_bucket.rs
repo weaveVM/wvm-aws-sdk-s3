@@ -1,3 +1,4 @@
+use crate::error::s3_load_errors::S3LoadErrors;
 use crate::s3::aws_config::Config;
 use crate::s3::bucket::DeleteBucketOutput;
 use crate::s3::builders::RequireBucket;
@@ -14,7 +15,9 @@ pub struct DeleteBucketBuilder<'a> {
 impl<'a> DeleteBucketBuilder<'a> {
     pub async fn send(mut self, account_id: u64) -> Result<DeleteBucketOutput, Error> {
         let db_conn = self.config.db_driver.get_conn();
-        let _deleted_bucket = ps_delete_bucket(db_conn, account_id, &self.bucket_name).await?;
+        let _deleted_bucket = ps_delete_bucket(db_conn, account_id, &self.bucket_name)
+            .await
+            .map_err(|_| S3LoadErrors::BucketNotDeleted);
         let output = DeleteBucketOutput::from((self.bucket_name, account_id));
         Ok(output)
     }
