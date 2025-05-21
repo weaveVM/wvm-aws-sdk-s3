@@ -63,7 +63,6 @@ impl<'a> PutObjectBuilder<'a> {
         // sleep 1s for tx inclusion
         sleep(Duration::from_secs(1)).await;
 
-        let block = get_transaction(wvm_tx.clone()).await?;
         let bucket = ps_get_bucket(
             self.config.db_driver.clone().get_conn(),
             account_id,
@@ -71,19 +70,16 @@ impl<'a> PutObjectBuilder<'a> {
         )
         .await?;
 
-        if let Some(block) = block {
-            let db_conn = self.config.db_driver.get_conn();
-            let _bucket = ps_put_object(
-                db_conn,
-                bucket.id.parse::<u64>()?,
-                &self.key,
-                &wvm_tx,
-                block.block_number.unwrap_or_default(),
-                self.clone().data.len() as u64,
-                &serde_json::to_string(&self.metadata)?,
-            )
-            .await?;
-        }
+        let db_conn = self.config.db_driver.get_conn();
+        let _bucket = ps_put_object(
+            db_conn,
+            bucket.id.parse::<u64>()?,
+            &self.key,
+            &wvm_tx,
+            0,
+            self.clone().data.len() as u64,
+            &serde_json::to_string(&self.metadata)?,
+        ).await?;
 
         let output = PutObjectOutput::from(wvm_tx, Some(self.wvm_bundler_tags));
         Ok(output)
