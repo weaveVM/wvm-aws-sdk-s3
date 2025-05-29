@@ -1,6 +1,6 @@
 use crate::error::ErrorXmlFactory;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum S3LoadErrors {
     Unauthorized,
     CredentialNotPresent,
