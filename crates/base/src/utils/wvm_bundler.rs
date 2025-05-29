@@ -1,6 +1,6 @@
 use crate::s3::S3_CONFIG;
 use crate::utils::env_utils::get_env_var;
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use bundler::utils::core::bundle::Bundle;
 use bundler::utils::core::envelope::Envelope;
 use bundler::utils::core::tags::Tag;
@@ -23,12 +23,19 @@ pub async fn post_data_to_bundler(
         tags.extend(external_tags);
     }
 
-    let envelope: Envelope = Envelope::new()
+    let envelope: Envelope = match Envelope::new()
         .data(Some(envelope_data))
         .target(None)
         .tags(Some(tags.clone()))
         .build()
-        .unwrap();
+    {
+        Ok(envelope) => envelope,
+        Err(e) => {
+            eprintln!("post_data_to_bundler error {:?}", e);
+            return Err(anyhow!("Error creating bundle request"));
+        }
+    };
+
     envelopes.push(envelope);
 
     let bundle_tx = Bundle::new()
@@ -37,8 +44,15 @@ pub async fn post_data_to_bundler(
         .build()
         .expect("ERROR SENDING BUNDLE")
         .propagate_to_load0(load0_api_key)
-        .await
-        .unwrap();
+        .await;
+
+    let bundle_tx = match bundle_tx {
+        Ok(bundle_tx) => bundle_tx,
+        Err(e) => {
+            eprintln!("post_data_to_bundler error {:?}", e);
+            return Err(anyhow!("Error creating bundle request"));
+        }
+    };
 
     Ok(bundle_tx)
 }

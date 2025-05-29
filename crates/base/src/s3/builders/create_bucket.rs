@@ -40,21 +40,9 @@ impl<'a> CreateBucketBuilder<'a> {
             // sleep 1s for tx inclusion on WeaveVM block
             sleep(Duration::from_secs(1)).await;
 
-            let block = get_transaction(bucket_tx.clone())
+            let _bucket = ps_create_bucket(db_conn, account_id, &bucket_name, &bucket_tx, 0)
                 .await
                 .map_err(|_| S3LoadErrors::BucketNotCreated)?;
-
-            if let Some(block) = block {
-                let _bucket = ps_create_bucket(
-                    db_conn,
-                    account_id,
-                    &bucket_name,
-                    &bucket_tx,
-                    block.block_number.unwrap_or_default(),
-                )
-                .await
-                .map_err(|_| S3LoadErrors::BucketNotCreated)?;
-            }
 
             let output = CreateBucketOutput::from(bucket_tx);
             Ok(output)

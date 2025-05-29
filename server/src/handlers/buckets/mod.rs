@@ -210,6 +210,12 @@ async fn put_object<'a>(
     body: Bytes,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let create_bucket_if_not_exists = req
+        .headers()
+        .get("x-amz-meta-create-bucket-if-not-exists")
+        .map(|e| e.to_str().unwrap() == "true")
+        .unwrap_or(false);
+
     let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
@@ -226,19 +232,27 @@ async fn put_object<'a>(
         .key(key_name)
         .body(body.to_vec())
         .content_type(content_type)
-        .send(auth.0.owner_id as u64)
+        .send(
+            auth.0.owner_id as u64,
+            create_bucket_if_not_exists,
+            service.bucket_service.s3_client.clone(),
+        )
         .await;
 
-    if let Ok(res) = res {
-        HttpResponse::Ok()
-            .status(StatusCode::from_u16(200).unwrap())
-            .insert_header(("ETag", res.tx_hash))
-            .await
-    } else {
-        Err(ErrorBadRequest(S3LoadErrors::ObjectNotCreated.to_xml(
-            Some(format!("{}/{}", bucket_name, key_name)),
-            None,
-        )))
+    match res {
+        Ok(res) => {
+            HttpResponse::Ok()
+                .status(StatusCode::from_u16(200).unwrap())
+                .insert_header(("ETag", res.tx_hash))
+                .await
+        }
+        Err(e) => {
+            eprintln!("Error PUT/OBJ handler. {:?}", e);
+            Err(ErrorBadRequest(S3LoadErrors::ObjectNotCreated.to_xml(
+                Some(format!("{}/{}", bucket_name, key_name)),
+                None,
+            )))
+        }
     }
 }
 
