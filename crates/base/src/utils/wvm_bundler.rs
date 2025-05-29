@@ -27,7 +27,8 @@ pub async fn post_data_to_bundler(
         .data(Some(envelope_data))
         .target(None)
         .tags(Some(tags.clone()))
-        .build() {
+        .build()
+    {
         Ok(envelope) => envelope,
         Err(e) => {
             eprintln!("post_data_to_bundler error {:?}", e);

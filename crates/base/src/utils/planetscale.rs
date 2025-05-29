@@ -84,7 +84,6 @@ pub async fn ps_put_object(
     size_bytes: u64,
     metadata: &str,
 ) -> Result<(), Error> {
-
     let query_str = format!(
         "INSERT INTO object_index(bucket_id, object_key, full_path, tx_hash, block_number, size_bytes, metadata)
      SELECT {}, \"{}\", CONCAT(b.bucket_name, '/', \"{}\"), \"{}\", {}, {}, JSON_OBJECT('metadata', CAST('{}' AS JSON))

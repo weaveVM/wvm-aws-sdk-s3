@@ -1,17 +1,17 @@
-use std::sync::Arc;
 use anyhow::{anyhow, Error};
 use bundler::utils::core::tags::Tag;
+use std::sync::Arc;
 
 use crate::s3::aws_config::Config;
+use crate::s3::bucket::Bucket;
 use crate::s3::builders::RequireBucket;
+use crate::s3::client::Client;
 use crate::s3::object::PutObjectOutput;
 use crate::utils::planetscale::{ps_get_account_id, ps_get_bucket, ps_put_object};
 use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
 use macros::weavevm;
 use tokio::time::{sleep, Duration};
-use crate::s3::bucket::Bucket;
-use crate::s3::client::Client;
 
 #[weavevm(require_bucket)]
 #[derive(Debug, Clone, Default)]
@@ -65,10 +65,16 @@ impl<'a> PutObjectBuilder<'a> {
             self.config.db_driver.clone().get_conn(),
             account_id,
             &self.bucket_name,
-        ).await
+        )
+        .await
     }
 
-    pub async fn send(mut self, account_id: u64, create_bucket_if_not_exists: bool, s3_service: Arc<Client<'a>>) -> Result<PutObjectOutput, Error> {
+    pub async fn send(
+        mut self,
+        account_id: u64,
+        create_bucket_if_not_exists: bool,
+        s3_service: Arc<Client<'a>>,
+    ) -> Result<PutObjectOutput, Error> {
         let wvm_tx =
             post_data_to_bundler(self.clone().data, Some(self.clone().wvm_bundler_tags)).await?;
         // sleep 1s for tx inclusion
@@ -80,7 +86,11 @@ impl<'a> PutObjectBuilder<'a> {
                 let e_str = e.to_string();
                 let no_results = e_str.contains("No results found");
                 if no_results && create_bucket_if_not_exists {
-                    let _crb = s3_service.create_bucket().bucket(&self.bucket_name).send(account_id).await;
+                    let _crb = s3_service
+                        .create_bucket()
+                        .bucket(&self.bucket_name)
+                        .send(account_id)
+                        .await;
                     Ok(self.find_bucket(account_id).await?)
                 } else {
                     eprintln!("Error finding bucket {}", e.to_string());
@@ -102,7 +112,8 @@ impl<'a> PutObjectBuilder<'a> {
             0,
             self.clone().data.len() as u64,
             &serde_json::to_string(&self.metadata)?,
-        ).await?;
+        )
+        .await?;
 
         let output = PutObjectOutput::from(wvm_tx, Some(self.wvm_bundler_tags));
         Ok(output)
