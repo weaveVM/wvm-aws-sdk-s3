@@ -88,7 +88,7 @@ async fn delete_bucket<'a>(
     }
 }
 
-#[delete("/{bucket}/{key}")]
+#[delete("/{bucket}/{key:.*}")]
 async fn delete_object<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketAndObjectInfo>,
@@ -118,7 +118,7 @@ async fn delete_object<'a>(
     }
 }
 
-#[get("/{bucket}/{key}")]
+#[get("/{bucket}/{key:.*}")]
 async fn get_object<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketAndObjectInfo>,
@@ -203,7 +203,7 @@ async fn list_objects<'a>(
     Ok(Json(res))
 }
 
-#[put("/{bucket}/{key}")]
+#[put("/{bucket}/{key:.*}")]
 async fn put_object<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     info: web::Path<BucketAndObjectInfo>,
