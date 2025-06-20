@@ -73,6 +73,7 @@ impl<'a> PutObjectBuilder<'a> {
         mut self,
         account_id: u64,
         create_bucket_if_not_exists: bool,
+        is_folder: bool,
         s3_service: Arc<Client<'a>>,
     ) -> Result<PutObjectOutput, Error> {
         let wvm_tx =
@@ -111,6 +112,7 @@ impl<'a> PutObjectBuilder<'a> {
             &wvm_tx,
             0,
             self.clone().data.len() as u64,
+            is_folder,
             &serde_json::to_string(&self.metadata)?,
         )
         .await?;

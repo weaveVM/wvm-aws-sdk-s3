@@ -3,7 +3,7 @@ use crate::handlers::buckets::configure_app_s3_endpoints;
 use crate::services::auth_service::AuthService;
 use crate::services::buckets::bucket_service::WvmBucketService;
 use crate::services::wvm_s3_services::WvmS3Services;
-use actix_web::get;
+use actix_web::{get, HttpResponse, Responder};
 use actix_web::web::{Data, ServiceConfig};
 use base::s3::aws_config::Config;
 use base::s3::client::Client;
@@ -13,6 +13,7 @@ use planetscale::PlanetScaleDriver;
 use shuttle_runtime::main;
 use std::cell::OnceCell;
 use std::sync::{Arc, OnceLock};
+use crate::handlers::fs::configure_fs_endpoints;
 
 mod actix_web_service;
 mod handlers;
@@ -72,6 +73,11 @@ fn configure_env_vars(secrets: &shuttle_runtime::SecretStore) {
     }
 }
 
+/// *Any* method on `/fs`
+async fn fs_root() -> impl Responder {
+    HttpResponse::Ok().body("FS endpoint")
+}
+
 #[main]
 async fn main(
     #[shuttle_runtime::Secrets] secrets: shuttle_runtime::SecretStore,
@@ -88,6 +94,8 @@ async fn main(
     let config = move |cfg: &mut ServiceConfig| {
         cfg.app_data(Data::new(service_box));
         cfg.service(hello_world);
+        // order of things matter
+        configure_fs_endpoints(cfg);
         configure_app_s3_endpoints(cfg);
     };
 
