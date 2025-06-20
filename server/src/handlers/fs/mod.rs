@@ -21,7 +21,6 @@ pub async fn get_fs<'a>(
     info: web::Path<FsRequest>,
     req: HttpRequest,
 ) -> actix_web::Result<Json<Vec<Object>>> {
-    println!("get_fs");
     let load_only_folders = req
         .headers()
         .get("X-Load-Only-Folders")
@@ -31,8 +30,6 @@ pub async fn get_fs<'a>(
 
     let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
-
-    println!("buCKET NAME {}", bucket_name);
 
     let objects = ps_get_file_system_structure(service.db_driver.get_conn(), bucket_name, info.folder.clone(), auth.0.owner_id as u64, load_only_folders).await.map_err(|e| {
         ErrorNotFound(e)

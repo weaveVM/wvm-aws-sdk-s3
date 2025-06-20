@@ -96,7 +96,7 @@ async fn main(
         cfg.service(hello_world);
         // order of things matter
         configure_fs_endpoints(cfg);
-        configure_app_s3_endpoints(cfg);
+       configure_app_s3_endpoints(cfg);
     };
 
     Ok(config.into())
