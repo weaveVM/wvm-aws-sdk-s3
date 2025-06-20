@@ -68,6 +68,8 @@ async fn check_user_auth<'a>(
 
     let access_key = service.auth_service.verify_access(token.clone()).await;
 
+    println!("{:?} {}", access_key, token);
+
     if let Some(access_key) = access_key {
         req.extensions_mut().insert(CurrentUser(access_key));
         Ok(true)
