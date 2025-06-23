@@ -1,7 +1,7 @@
 use crate::s3::account::{AccountId, AccountName};
 use crate::s3::bucket::Bucket;
 use crate::s3::object::Object;
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use planetscale_driver::{query, PSConnection};
 use std::sync::Arc;
 
@@ -82,14 +82,15 @@ pub async fn ps_put_object(
     tx_hash: &str,
     block_number: u64,
     size_bytes: u64,
+    is_folder: bool,
     metadata: &str,
 ) -> Result<(), Error> {
     let query_str = format!(
-        "INSERT INTO object_index(bucket_id, object_key, full_path, tx_hash, block_number, size_bytes, metadata)
-     SELECT {}, \"{}\", CONCAT(b.bucket_name, '/', \"{}\"), \"{}\", {}, {}, JSON_OBJECT('metadata', CAST('{}' AS JSON))
+        "INSERT INTO object_index(bucket_id, object_key, full_path, tx_hash, block_number, size_bytes, is_folder, metadata)
+     SELECT {}, \"{}\", CONCAT(b.bucket_name, '/', \"{}\"), \"{}\", {}, {}, {}, JSON_OBJECT('metadata', CAST('{}' AS JSON))
      FROM bucket_index b
      WHERE b.id = {};",
-        bucket_id, object_key, object_key, tx_hash, block_number, size_bytes, metadata, bucket_id
+        bucket_id, object_key, object_key, tx_hash, block_number, size_bytes, is_folder, metadata, bucket_id
     );
 
     query(&query_str).execute(&conn).await?;
@@ -162,4 +163,36 @@ pub async fn ps_get_bucket(
     let bucket: Bucket = query(&query_str).fetch_one(&conn).await?;
 
     Ok(bucket)
+}
+
+pub async fn ps_get_file_system_structure(
+    conn: PSConnection,
+    bucket_name: &str,
+    potential_folder: Option<String>,
+    account_id: u64,
+    folder_only: bool,
+) -> Result<Vec<Object>, Error> {
+    let _bucket = ps_get_bucket(conn.clone(), account_id, bucket_name)
+        .await
+        .map_err(|_| anyhow!("Bucket does not exist or is not owned by current user"))?;
+
+    let lookup_folder = match potential_folder {
+        Some(folder) => format!("{}/{}", bucket_name, folder),
+        None => bucket_name.to_string(),
+    };
+
+    let query_str = if folder_only {
+        format!(
+            "SELECT * FROM object_index WHERE is_folder = 1 AND full_path LIKE CONCAT('{}', '/%')",
+            lookup_folder
+        )
+    } else {
+        format!(
+            "SELECT * FROM object_index WHERE full_path LIKE CONCAT('{}', '/%')",
+            lookup_folder
+        )
+    };
+
+    let folder: Vec<Object> = query(&query_str).fetch_all(&conn).await?;
+    Ok(folder)
 }

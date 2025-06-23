@@ -14,6 +14,8 @@ pub struct Object {
     pub last_modified: String,
     pub is_deleted: bool,
     pub metadata: String,
+    pub full_path: String,
+    pub is_folder: bool,
 }
 
 #[derive(Debug, Clone, Default)]

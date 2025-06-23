@@ -210,9 +210,14 @@ async fn put_object<'a>(
     body: Bytes,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
-    let create_bucket_if_not_exists = req
-        .headers()
+    let headers = req.headers();
+    let create_bucket_if_not_exists = headers
         .get("x-amz-meta-create-bucket-if-not-exists")
+        .map(|e| e.to_str().unwrap() == "true")
+        .unwrap_or(false);
+
+    let is_folder = headers
+        .get("x-amz-meta-is-folder")
         .map(|e| e.to_str().unwrap() == "true")
         .unwrap_or(false);
 
@@ -235,6 +240,7 @@ async fn put_object<'a>(
         .send(
             auth.0.owner_id as u64,
             create_bucket_if_not_exists,
+            is_folder,
             service.bucket_service.s3_client.clone(),
         )
         .await;
