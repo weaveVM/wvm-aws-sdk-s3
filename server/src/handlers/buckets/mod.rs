@@ -211,11 +211,13 @@ async fn put_object<'a>(
     req: HttpRequest,
 ) -> Result<HttpResponse> {
     let headers = req.headers();
-    let create_bucket_if_not_exists = headers.get("x-amz-meta-create-bucket-if-not-exists")
+    let create_bucket_if_not_exists = headers
+        .get("x-amz-meta-create-bucket-if-not-exists")
         .map(|e| e.to_str().unwrap() == "true")
         .unwrap_or(false);
 
-    let is_folder = headers.get("x-amz-meta-is-folder")
+    let is_folder = headers
+        .get("x-amz-meta-is-folder")
         .map(|e| e.to_str().unwrap() == "true")
         .unwrap_or(false);
 

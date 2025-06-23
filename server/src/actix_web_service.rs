@@ -1,17 +1,18 @@
+use crate::handlers::fs::{get_fs, get_fs_bucket};
 use crate::middleware::auth_middleware;
 use actix_web::middleware::NormalizePath;
+use actix_web::{guard, web, HttpResponse};
 use async_trait::async_trait;
 use std::net::SocketAddr;
-use actix_web::{guard, HttpResponse, web};
-use crate::handlers::fs::get_fs;
 
 /// A wrapper type for a closure that returns an [actix_web::web::ServiceConfig] so we can implement
 /// [shuttle_runtime::Service] for it.
 #[derive(Clone)]
 pub struct CustomActixWebService<F>(pub F);
 
-async fn fs_root() -> HttpResponse          { HttpResponse::Ok().body("FS") }
-
+async fn fs_root() -> HttpResponse {
+    HttpResponse::Ok().body("FS")
+}
 
 #[async_trait]
 impl<F> shuttle_runtime::Service for CustomActixWebService<F>
@@ -28,8 +29,9 @@ where
                 //     scope is registered BEFORE `.configure(self.0.clone())`.
                 .service(
                     web::scope("/fs")
-                        .route("",          web::get().to(fs_root))            // GET /fs
-                        .route("/{bucket}/{folder:.*}", web::get().to(get_fs)) // GET /fs/{bucket}/{…}
+                        .route("", web::get().to(fs_root))
+                        .route("/{bucket}", web::get().to(get_fs_bucket)) // GET /fs
+                        .route("/{bucket}/{folder:.*}", web::get().to(get_fs)), // GET /fs/{bucket}/{…}
                 )
                 .configure(self.0.clone())
                 .wrap(actix_web::middleware::from_fn(auth_middleware))

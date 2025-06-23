@@ -15,7 +15,7 @@ pub struct Object {
     pub is_deleted: bool,
     pub metadata: String,
     pub full_path: String,
-    pub is_folder: bool
+    pub is_folder: bool,
 }
 
 #[derive(Debug, Clone, Default)]

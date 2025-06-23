@@ -165,25 +165,34 @@ pub async fn ps_get_bucket(
     Ok(bucket)
 }
 
-pub async fn ps_get_file_system_structure(conn: PSConnection, bucket_name: &str, potential_folder: Option<String>, account_id: u64, folder_only: bool) -> Result<Vec<Object>, Error> {
-    if let Ok(bucket) = ps_get_bucket(conn.clone(), account_id, bucket_name).await {
-        let is_folder = if folder_only { 1 } else { 0 };
-        let lookup_folder = if let Some(potential_folder) = potential_folder {
-            format!("{}/{}", bucket_name, potential_folder)
-        } else {
-            format!("{}", bucket_name)
-        };
+pub async fn ps_get_file_system_structure(
+    conn: PSConnection,
+    bucket_name: &str,
+    potential_folder: Option<String>,
+    account_id: u64,
+    folder_only: bool,
+) -> Result<Vec<Object>, Error> {
+    let _bucket = ps_get_bucket(conn.clone(), account_id, bucket_name)
+        .await
+        .map_err(|_| anyhow!("Bucket does not exist or is not owned by current user"))?;
 
-        let query_str = format!(
-            "SELECT * FROM object_index WHERE is_folder = {} AND full_path LIKE CONCAT('{}', '/%')",
-            is_folder,
-            lookup_folder,
-        );
+    let lookup_folder = match potential_folder {
+        Some(folder) => format!("{}/{}", bucket_name, folder),
+        None => bucket_name.to_string(),
+    };
 
-        let folder: Vec<Object> = query(&query_str).fetch_all(&conn).await?;
-
-        Ok(folder)
+    let query_str = if folder_only {
+        format!(
+            "SELECT * FROM object_index WHERE is_folder = 1 AND full_path LIKE CONCAT('{}', '/%')",
+            lookup_folder
+        )
     } else {
-        Err(anyhow!("Bucket does not exist or is not owend by current user"))
-    }
+        format!(
+            "SELECT * FROM object_index WHERE full_path LIKE CONCAT('{}', '/%')",
+            lookup_folder
+        )
+    };
+
+    let folder: Vec<Object> = query(&query_str).fetch_all(&conn).await?;
+    Ok(folder)
 }
