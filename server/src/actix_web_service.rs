@@ -4,6 +4,7 @@ use actix_web::middleware::NormalizePath;
 use actix_web::{guard, web, HttpResponse};
 use async_trait::async_trait;
 use std::net::SocketAddr;
+use actix_web::web::PayloadConfig;
 
 /// A wrapper type for a closure that returns an [actix_web::web::ServiceConfig] so we can implement
 /// [shuttle_runtime::Service] for it.
@@ -27,6 +28,7 @@ where
             actix_web::App::new()
                 // 1️⃣  Everything under /fs goes in its own scope, and that
                 //     scope is registered BEFORE `.configure(self.0.clone())`.
+                .app_data(PayloadConfig::new((1024 * 1024) * 25))
                 .service(
                     web::scope("/fs")
                         .route("", web::get().to(fs_root))
