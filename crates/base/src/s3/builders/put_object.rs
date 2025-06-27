@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Error};
 use bundler::utils::core::tags::Tag;
 use std::sync::Arc;
-
+use serde_json::Value;
 use crate::s3::aws_config::Config;
 use crate::s3::bucket::Bucket;
 use crate::s3::builders::RequireBucket;
@@ -12,6 +12,8 @@ use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
 use macros::weavevm;
 use tokio::time::{sleep, Duration};
+use crate::utils::constants::UPLOADER;
+use crate::utils::stream::stream_json_lines;
 
 #[weavevm(require_bucket)]
 #[derive(Debug, Clone, Default)]
@@ -21,6 +23,7 @@ pub struct PutObjectBuilder<'a> {
     pub data: Vec<u8>,
     pub metadata: Vec<(String, String)>,
     pub wvm_bundler_tags: Vec<Tag>,
+    pub content_type: String,
 }
 
 impl<'a> PutObjectBuilder<'a> {
@@ -40,6 +43,8 @@ impl<'a> PutObjectBuilder<'a> {
         } else {
             mime
         };
+
+        self.content_type = content_type.to_string();
 
         self.metadata
             .push(("Content-Type".to_string(), content_type.to_string()));
@@ -74,10 +79,37 @@ impl<'a> PutObjectBuilder<'a> {
         account_id: u64,
         create_bucket_if_not_exists: bool,
         is_folder: bool,
+        uploader: Option<String>,
         s3_service: Arc<Client<'a>>,
     ) -> Result<PutObjectOutput, Error> {
-        let wvm_tx =
-            post_data_to_bundler(self.clone().data, Some(self.clone().wvm_bundler_tags)).await?;
+        let wvm_tx = if let Some(uploader) = uploader {
+            let url = format!("{}/{}", &*UPLOADER, "api/upload");
+            let response = ureq::post(&url)
+                .header("x-load-uploader", uploader)
+                .header("Content-Type", self.content_type.clone())
+                .send(self.data.as_slice());
+
+            match response {
+                Ok(data) => {
+                    let parsed = stream_json_lines::<Value, _>(data.into_body().into_reader(), |_| {});
+
+                    match parsed {
+                        Ok(Some(val)) => {
+                            if let Some(id) = val.get("data").and_then(|e| e.get("id")).and_then(|v| v.as_str()) {
+                                format!("ar://{}", id.to_string())
+                            } else {
+                                return Err(anyhow!("Missing 'id' field in uploader response"));
+                            }
+                        }
+                        _ => return Err(anyhow!("Invalid uploader response format")),
+                    }
+                }
+                Err(_) => return Err(anyhow!("Failed to contact uploader")),
+            }
+        } else {
+            post_data_to_bundler(self.clone().data, Some(self.clone().wvm_bundler_tags)).await?
+        };
+
         // sleep 1s for tx inclusion
         sleep(Duration::from_secs(1)).await;
 
