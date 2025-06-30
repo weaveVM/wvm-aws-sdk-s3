@@ -221,6 +221,12 @@ async fn put_object<'a>(
         .map(|e| e.to_str().unwrap() == "true")
         .unwrap_or(false);
 
+    let uploader_api = headers
+        .get("x-amz-meta-uploader-api")
+        .map(|e| e.to_str().unwrap())
+        .map(|e| e.to_string());
+
+
     let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
@@ -241,6 +247,7 @@ async fn put_object<'a>(
             auth.0.owner_id as u64,
             create_bucket_if_not_exists,
             is_folder,
+            uploader_api,
             service.bucket_service.s3_client.clone(),
         )
         .await;
