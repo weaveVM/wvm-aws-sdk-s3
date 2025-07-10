@@ -104,7 +104,7 @@ pub async fn ps_get_object(
     object_key: &str,
 ) -> Result<Object, Error> {
     let query_str = format!(
-        "SELECT * FROM object_index WHERE bucket_id = {} AND object_key = \"{}\" AND is_deleted = false",
+        "SELECT oi.* FROM object_index oi JOIN bucket_index bi ON oi.bucket_id = bi.id WHERE oi.bucket_id = {} AND oi.object_key = \"{}\" AND oi.is_deleted = false",
         bucket_id, object_key
     );
 

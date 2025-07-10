@@ -13,7 +13,7 @@ pub fn find_key_in_metadata(metadata: &Vec<(String, String)>, key: String) -> Op
 }
 
 pub fn retrieve_object_bytes(tx: &str) -> Option<Vec<u8>> {
-    let data = ureq::get(format!("{}/{}/0", &*DATA_RETRIEVAL_ENDPOINT, tx))
+    let data = ureq::get(format!("{}/{}", &*DATA_RETRIEVAL_ENDPOINT, tx))
         .call()
         .ok();
     if let Some(res) = data {

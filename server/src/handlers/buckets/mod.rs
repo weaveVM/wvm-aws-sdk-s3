@@ -127,6 +127,8 @@ async fn get_object<'a>(
     let auth = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
+    println!("Key {} bucket {}", key_name, bucket_name);
+    println!("{}", auth.0.owner_id);
     let res = service
         .bucket_service
         .s3_client
@@ -135,6 +137,8 @@ async fn get_object<'a>(
         .key(key_name)
         .send(auth.0.owner_id as u64)
         .await;
+
+    println!("res {:?}", res);
 
     if let Ok(obj) = res {
         let metadata = extract_metadata(obj.metadata);

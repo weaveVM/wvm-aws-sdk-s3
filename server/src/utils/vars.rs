@@ -6,5 +6,5 @@ pub static AUTH_HOST: LazyLock<String> = LazyLock::new(|| {
 
 pub static DATA_RETRIEVAL_ENDPOINT: LazyLock<String> = LazyLock::new(|| {
     std::env::var("DATA_RETRIEVAL_ENDPOINT_API")
-        .unwrap_or_else(|_| "https://gateway.wvm.network/bundle".to_string())
+        .unwrap_or_else(|_| "https://load0.network/resolve".to_string())
 });
