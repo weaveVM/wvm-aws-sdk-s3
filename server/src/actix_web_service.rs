@@ -3,7 +3,8 @@ use crate::middleware::auth_middleware;
 use actix_web::middleware::NormalizePath;
 use actix_web::{guard, web, HttpResponse};
 use async_trait::async_trait;
-use std::net::SocketAddr;
+use std::net::{SocketAddr, SocketAddrV4};
+use std::str::FromStr;
 use actix_web::web::PayloadConfig;
 
 /// A wrapper type for a closure that returns an [actix_web::web::ServiceConfig] so we can implement
@@ -40,7 +41,7 @@ where
                 .wrap(NormalizePath::trim())
         })
         .workers(worker_count)
-        .bind(addr)?
+        .bind(SocketAddr::from(SocketAddrV4::from_str("0.0.0.0:8000").unwrap()))?
         .run();
 
         server.await.map_err(shuttle_runtime::CustomError::new)?;
