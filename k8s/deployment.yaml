@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wvm-aws-sdk-s3
+  namespace: business
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wvm-aws-sdk-s3
+  template:
+    metadata:
+      labels:
+        app: wvm-aws-sdk-s3
+    spec:
+      containers:
+        - name: wvm-aws-sdk-s3
+          image: localhost:5000/wvm-aws-sdk-s3:latest
+          ports:
+            - containerPort: 8000
+          securityContext:
+            runAsUser: 0

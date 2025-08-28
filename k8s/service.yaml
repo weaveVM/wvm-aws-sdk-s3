@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wvm-aws-sdk-s3
+  namespace: business
+  labels:
+    app: wvm-aws-sdk-s3
+spec:
+  type: ClusterIP
+  selector:
+    app: wvm-aws-sdk-s3
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000
