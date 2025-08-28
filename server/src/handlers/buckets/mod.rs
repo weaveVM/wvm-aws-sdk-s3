@@ -1,5 +1,5 @@
 use crate::services::wvm_s3_services::WvmS3Services;
-use crate::utils::auth::extract_req_user;
+use crate::utils::auth::{ensure_permission, extract_req_user};
 use crate::utils::object::{extract_metadata, find_key_in_metadata, retrieve_object_bytes};
 use crate::utils::time::to_rfc_7231_datetime;
 use actix_web::error::{ErrorBadRequest, ErrorNotFound, ErrorUnauthorized, HttpError};
@@ -39,8 +39,9 @@ async fn create_bucket<'a>(
     info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
+    ensure_permission(permissions.bucket_can_create(bucket_name))?;
 
     let res = service
         .bucket_service
@@ -67,8 +68,9 @@ async fn delete_bucket<'a>(
     info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
+    ensure_permission(permissions.bucket_can_delete(bucket_name))?;
     let res = service
         .bucket_service
         .s3_client
@@ -94,9 +96,10 @@ async fn delete_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
+    ensure_permission(permissions.bucket_can_write(bucket_name))?;
     let res = service
         .bucket_service
         .s3_client
@@ -124,8 +127,9 @@ async fn get_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
+    ensure_permission(permissions.bucket_can_write(bucket_name))?;
     let key_name = &info.key;
     println!("Key {} bucket {}", key_name, bucket_name);
     println!("{}", auth.0.owner_id);
@@ -175,7 +179,7 @@ async fn list_buckets<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     req: HttpRequest,
 ) -> Result<Json<Vec<Bucket>>> {
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let res = service
         .bucket_service
         .s3_client
@@ -192,8 +196,9 @@ async fn list_objects<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<Json<Vec<Object>>> {
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
+    ensure_permission(permissions.bucket_can_read(bucket_name))?;
     let key_name = &info.key;
     let res: std::result::Result<Vec<Object>, anyhow::Error> = service
         .bucket_service
@@ -230,9 +235,9 @@ async fn put_object<'a>(
         .map(|e| e.to_str().unwrap())
         .map(|e| e.to_string());
 
-
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
+    ensure_permission(permissions.bucket_can_write(bucket_name))?;
     let key_name = &info.key;
     let content_type = req
         .headers()

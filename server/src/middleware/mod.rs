@@ -1,3 +1,4 @@
+use crate::permission_container::PermissionContainer;
 use crate::services::wvm_s3_services::WvmS3Services;
 use crate::utils::auth::CurrentUser;
 use actix_web::body::MessageBody;
@@ -71,7 +72,8 @@ async fn check_user_auth<'a>(
     println!("{:?} {}", access_key, token);
 
     if let Some(access_key) = access_key {
-        req.extensions_mut().insert(CurrentUser(access_key));
+        req.extensions_mut().insert(CurrentUser(access_key.clone()));
+        req.extensions_mut().insert(PermissionContainer(access_key));
         Ok(true)
     } else {
         Ok(false)

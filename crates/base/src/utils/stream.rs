@@ -1,9 +1,12 @@
-use std::io::{BufRead, BufReader, Read};
 use serde::de::DeserializeOwned;
+use std::io::{BufRead, BufReader, Read};
 use tokio::io::AsyncReadExt;
 use ureq::Body;
 
-pub fn stream_json_lines<T, F>(mut body: impl Read, mut on_item: F) -> Result<Option<T>, Box<dyn std::error::Error>>
+pub fn stream_json_lines<T, F>(
+    mut body: impl Read,
+    mut on_item: F,
+) -> Result<Option<T>, Box<dyn std::error::Error>>
 where
     T: DeserializeOwned + Clone,
     F: FnMut(T),

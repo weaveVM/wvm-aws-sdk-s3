@@ -1,19 +1,19 @@
-use anyhow::{anyhow, Error};
-use bundler::utils::core::tags::Tag;
-use std::sync::Arc;
-use serde_json::Value;
 use crate::s3::aws_config::Config;
 use crate::s3::bucket::Bucket;
 use crate::s3::builders::RequireBucket;
 use crate::s3::client::Client;
 use crate::s3::object::PutObjectOutput;
+use crate::utils::constants::UPLOADER;
 use crate::utils::planetscale::{ps_get_account_id, ps_get_bucket, ps_put_object};
+use crate::utils::stream::stream_json_lines;
 use crate::utils::wvm::get_transaction;
 use crate::utils::wvm_bundler::post_data_to_bundler;
+use anyhow::{anyhow, Error};
+use bundler::utils::core::tags::Tag;
 use macros::weavevm;
+use serde_json::Value;
+use std::sync::Arc;
 use tokio::time::{sleep, Duration};
-use crate::utils::constants::UPLOADER;
-use crate::utils::stream::stream_json_lines;
 
 #[weavevm(require_bucket)]
 #[derive(Debug, Clone, Default)]
@@ -91,11 +91,16 @@ impl<'a> PutObjectBuilder<'a> {
 
             match response {
                 Ok(data) => {
-                    let parsed = stream_json_lines::<Value, _>(data.into_body().into_reader(), |_| {});
+                    let parsed =
+                        stream_json_lines::<Value, _>(data.into_body().into_reader(), |_| {});
 
                     match parsed {
                         Ok(Some(val)) => {
-                            if let Some(id) = val.get("data").and_then(|e| e.get("id")).and_then(|v| v.as_str()) {
+                            if let Some(id) = val
+                                .get("data")
+                                .and_then(|e| e.get("id"))
+                                .and_then(|v| v.as_str())
+                            {
                                 format!("ar://{}", id.to_string())
                             } else {
                                 return Err(anyhow!("Missing 'id' field in uploader response"));

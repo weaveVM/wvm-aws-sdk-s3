@@ -28,7 +28,7 @@ pub async fn get_fs<'a>(
         .unwrap_or("false"); // default when header missing or invalid
     let load_only_folders = load_only_folders.to_lowercase() == "true";
 
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
 
     let objects = ps_get_file_system_structure(
@@ -48,7 +48,7 @@ pub async fn get_fs_bucket<'a>(
     info: web::Path<FsRequest>,
     req: HttpRequest,
 ) -> actix_web::Result<Json<Vec<Object>>> {
-    let auth = extract_req_user(&req)?;
+    let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
 
     let objects = ps_get_file_system_structure(

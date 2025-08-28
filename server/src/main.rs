@@ -18,6 +18,7 @@ use std::sync::{Arc, OnceLock};
 mod actix_web_service;
 mod handlers;
 mod middleware;
+pub mod permission_container;
 mod services;
 mod utils;
 
