@@ -160,9 +160,13 @@ pub async fn ps_get_bucket(
         account_id, bucket_name
     );
 
-    let bucket: Bucket = query(&query_str).fetch_one(&conn).await?;
+    println!("{}", query_str);
 
-    Ok(bucket)
+    let bucket = query(&query_str).fetch_one(&conn).await;
+
+    println!("{:?}", &bucket);
+
+    Ok(bucket?)
 }
 
 pub async fn ps_get_file_system_structure(

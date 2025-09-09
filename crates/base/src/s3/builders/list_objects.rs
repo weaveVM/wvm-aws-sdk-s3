@@ -21,7 +21,7 @@ impl<'a> ListObjectsBuilder<'a> {
     pub async fn send(mut self, account_id: u64) -> Result<Vec<Object>, Error> {
         let db_conn = self.config.db_driver.get_conn();
         let bucket = ps_get_bucket(db_conn.clone(), account_id, &self.bucket_name).await?;
-        let objects = ps_list_objects(db_conn, bucket.id.parse::<u64>()?, self.max_keys).await?;
+        let objects = ps_list_objects(db_conn, bucket.id.parse::<u64>()?, self.max_keys).await.unwrap_or(vec![]);
         Ok(objects)
     }
 }

@@ -22,7 +22,7 @@ pub mod permission_container;
 mod services;
 mod utils;
 
-#[get("/")]
+#[get("/health")]
 async fn hello_world() -> &'static str {
     "Hello World!"
 }

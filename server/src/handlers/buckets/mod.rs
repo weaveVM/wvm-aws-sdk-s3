@@ -22,7 +22,7 @@ pub struct BucketInfo {
     bucket: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Default)]
 pub struct BucketAndObjectInfo {
     bucket: String,
     key: String,
@@ -39,6 +39,7 @@ async fn create_bucket<'a>(
     info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    println!("put");
     let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     ensure_permission(permissions.bucket_can_create(bucket_name))?;
@@ -68,6 +69,7 @@ async fn delete_bucket<'a>(
     info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    println!("delete");
     let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     ensure_permission(permissions.bucket_can_delete(bucket_name))?;
@@ -96,6 +98,7 @@ async fn delete_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    println!("delete-object");
     let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     let key_name = &info.key;
@@ -127,6 +130,7 @@ async fn get_object<'a>(
     info: web::Path<BucketAndObjectInfo>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
+    println!("get_object");
     let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     ensure_permission(permissions.bucket_can_write(bucket_name))?;
@@ -179,6 +183,7 @@ async fn list_buckets<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
     req: HttpRequest,
 ) -> Result<Json<Vec<Bucket>>> {
+    println!("Hello");
     let (auth, permissions) = extract_req_user(&req)?;
     let res = service
         .bucket_service
@@ -193,19 +198,21 @@ async fn list_buckets<'a>(
 #[get("/{bucket}")]
 async fn list_objects<'a>(
     service: Data<Arc<WvmS3Services<'a>>>,
-    info: web::Path<BucketAndObjectInfo>,
+    info: web::Path<BucketInfo>,
     req: HttpRequest,
 ) -> Result<Json<Vec<Object>>> {
+    println!("get_buckets /#bucket");
     let (auth, permissions) = extract_req_user(&req)?;
     let bucket_name = &info.bucket;
     ensure_permission(permissions.bucket_can_read(bucket_name))?;
-    let key_name = &info.key;
     let res: std::result::Result<Vec<Object>, anyhow::Error> = service
         .bucket_service
         .s3_client
         .list_objects_v2()
+        .bucket(&bucket_name)
         .send(auth.0.owner_id as u64)
         .await;
+    println!("{:?}", res);
     let res = res.map_err(|e| {
         ErrorNotFound(S3LoadErrors::NoSuchBucket.to_xml(Some(bucket_name.to_string()), None))
     })?;
@@ -280,12 +287,12 @@ async fn put_object<'a>(
 
 // App configuration function
 pub fn configure_app_s3_endpoints(cfg: &mut ServiceConfig) {
-    cfg.service(create_bucket)
+    cfg.service(list_buckets)
+        .service(list_objects)
+        .service(create_bucket)
         .service(delete_bucket)
         .service(delete_object)
         .service(get_object)
-        .service(list_buckets)
-        .service(list_objects)
         .service(put_object)
         .service(abcd);
 }
