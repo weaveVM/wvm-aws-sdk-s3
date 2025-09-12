@@ -1,5 +1,5 @@
 use crate::services::wvm_s3_services::WvmS3Services;
-use crate::utils::auth::{ensure_permission, extract_req_user};
+use crate::utils::auth::{ensure_permission, extract_req_user, CurrentUser};
 use crate::utils::object::{extract_metadata, find_key_in_metadata, retrieve_object_bytes};
 use crate::utils::time::to_rfc_7231_datetime;
 use actix_web::error::{ErrorBadRequest, ErrorNotFound, ErrorUnauthorized, HttpError};
@@ -185,6 +185,14 @@ async fn list_buckets<'a>(
 ) -> Result<Json<Vec<Bucket>>> {
     println!("Hello");
     let (auth, permissions) = extract_req_user(&req)?;
+    let res = list_buckets_raw(service, auth).await?;
+    Ok(Json(res))
+}
+
+async fn list_buckets_raw(
+    service: Data<Arc<WvmS3Services<'_>>>,
+    auth: CurrentUser,
+) -> Result<Vec<Bucket>> {
     let res = service
         .bucket_service
         .s3_client
@@ -192,7 +200,7 @@ async fn list_buckets<'a>(
         .send(auth.0.owner_id as u64)
         .await;
     let res = res.map_err(|e| actix_web::error::ErrorNotFound(e))?;
-    Ok(Json(res))
+    Ok(res)
 }
 
 #[get("/{bucket}")]
@@ -217,6 +225,35 @@ async fn list_objects<'a>(
         ErrorNotFound(S3LoadErrors::NoSuchBucket.to_xml(Some(bucket_name.to_string()), None))
     })?;
     Ok(Json(res))
+}
+
+#[get("/v/{bucket}")]
+async fn verify_bucket_ownership<'a>(
+    service: Data<Arc<WvmS3Services<'a>>>,
+    info: web::Path<BucketInfo>,
+    req: HttpRequest,
+) -> Result<Json<Bucket>> {
+    let bucket_name = &info.bucket;
+    let (auth, permissions) = extract_req_user(&req)?;
+    let buckets = list_buckets_raw(service, auth).await;
+
+    match buckets {
+        Ok(buckets) => {
+            let maybe_bucket = buckets
+                .iter()
+                .find(|e| e.bucket_name == bucket_name.clone());
+            if let Some(bucket) = maybe_bucket {
+                Ok(Json(bucket.clone()))
+            } else {
+                Err(ErrorNotFound(
+                    S3LoadErrors::NoSuchBucket.to_xml(Some(bucket_name.to_string()), None),
+                ))
+            }
+        }
+        Err(e) => Err(ErrorNotFound(
+            S3LoadErrors::NoSuchBucket.to_xml(Some(bucket_name.to_string()), None),
+        )),
+    }
 }
 
 #[put("/{bucket}/{key:.*}")]
@@ -288,6 +325,7 @@ async fn put_object<'a>(
 // App configuration function
 pub fn configure_app_s3_endpoints(cfg: &mut ServiceConfig) {
     cfg.service(list_buckets)
+        .service(verify_bucket_ownership)
         .service(list_objects)
         .service(create_bucket)
         .service(delete_bucket)
